@@ -130,7 +130,8 @@
     <!-- ฟอร์มเพิ่มกิจกรรมห้อง -->
     <form class="modal-box box" id="actForm" autocomplete="off">
       <button type="button" class="close-btn" data-act="close" aria-label="ปิด">✕</button>
-      <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
+      <input type="hidden" name="id">
+      <h2 id="actFormTitle">🎪 เพิ่มกิจกรรมห้องเรียน</h2>
       <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
       <div class="row">
         <label>วันที่เริ่ม <input name="date" type="date" required></label>
@@ -140,7 +141,7 @@
       <label>รายละเอียด <textarea name="description" rows="2" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea></label>
       <div class="row">
         <button type="button" class="btn" data-act="close">ยกเลิก</button>
-        <button type="submit" class="btn primary">บันทึกกิจกรรม</button>
+        <button type="submit" class="btn primary" id="actSubmit">บันทึกกิจกรรม</button>
       </div>
     </form>
 

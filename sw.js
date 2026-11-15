@@ -1,5 +1,5 @@
 // School Quest service worker: เน้นเครือข่ายก่อน (อัปเดตไฟล์แล้วเห็นทันที) และใช้แคชเมื่อออฟไลน์
-const V = "sq-v3";
+const V = "sq-v4";
 const ASSETS = ["./", "index.html", "style.css", "app.js", "manifest.json", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {

@@ -95,9 +95,9 @@ const isLeaderName = u => Object.prototype.hasOwnProperty.call(LEADERS, u);
 const normRoom = r => (r || "").replace(/\s+/g, "") || "ม.6/12";
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-function toast(msg){
+function toast(msg, ms = 2200){
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
-  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200);
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), ms);
 }
 
 let actx;
@@ -136,24 +136,35 @@ function syncToGoogleCalendar(title, due, details = ""){
 const newData = () => ({ hw:[], xp:0, coins:0, streak:0, lastDay:"", done:0, badges:[], avatar:"🐱", room:"ม.6/12", role:"student" });
 
 let user = null, NAME = "", ROOM = "ม.6/12", ROLE = "student", AVATAR = "🐱", D = null;
+let actsErr = "";
 let sharedQuests = [], classActivities = [], members = [], membersErr = "", openQuests = new Set();
 let books = [], bookErr = "", bookSubject = "all", bookSearch = "", bookCover = null;
 let page = "home", qFilter = "todo", qSearch = "", saving = false;
 let calY, calM, selDate = iso(new Date());
 let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
 
+function errInfo(err){
+  let o = {}; try { o = JSON.parse(err.message); } catch {}
+  return { code: o.code || "", msg: o.message || String(err.message || err), details: o.details || "" };
+}
+function friendlyErr(err, table){
+  const e = errInfo(err), m = (e.msg + " " + e.details).toLowerCase();
+  if (e.code === "42501" || m.includes("row-level security")) return `Supabase ไม่อนุญาตให้เขียนตาราง ${table} (RLS) · รัน schema.sql`;
+  if (e.code === "42P01" || e.code === "PGRST205" || m.includes("does not exist") && m.includes("relation")) return `ยังไม่มีตาราง ${table} · รัน schema.sql`;
+  if (!navigator.onLine || /failed to fetch|networkerror/i.test(e.msg)) return "ไม่มีอินเทอร์เน็ต ลองใหม่อีกครั้ง";
+  return e.msg.slice(0, 110);
+}
+
 async function loadClassData(){
   const r = enc(ROOM);
-  try {
-    const [quests, acts] = await Promise.all([
-      sb(`shared_quests?room=eq.${r}&select=*`),
-      sb(`class_activities?room_target=eq.${r}&select=*`)
-    ]);
-    sharedQuests = quests || [];
-    classActivities = acts || [];
-  } catch (err) {
-    console.error("โหลดข้อมูลห้องไม่สำเร็จ:", err);
-  }
+  const [q, a] = await Promise.allSettled([
+    sb(`shared_quests?room=eq.${r}&select=*`),
+    sb(`class_activities?room_target=eq.${r}&select=*`)
+  ]);
+  if (q.status === "fulfilled") sharedQuests = q.value || [];
+  else console.error("โหลดเควสไม่สำเร็จ:", q.reason);
+  if (a.status === "fulfilled"){ classActivities = a.value || []; actsErr = ""; }
+  else { actsErr = friendlyErr(a.reason, "class_activities"); console.error("โหลดกิจกรรมไม่สำเร็จ:", a.reason); }
   try {
     const all = await sb("users?select=username,name,room,data");
     members = (all || []).filter(m => normRoom(m.room) === ROOM)
@@ -501,6 +512,13 @@ function renderSide(){
   $("#badge").textContent = pendingShared().length || "";
 }
 
+function upcomingActs(){
+  const l = classActivities.filter(a => daysLeft(actEnd(a)) >= 0 && daysLeft(a.date) <= 7)
+    .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
+  if (!l.length) return "";
+  return `<h3 class="h3">🎪 กิจกรรมห้องที่กำลังมา</h3>` + l.map(a => callout("🎪", a.title, `${actRange(a)} · ${actWhen(a)}${a.assignee ? " · 👤 " + a.assignee : ""}`)).join("");
+}
+
 function renderHome(){
   const lv = levelOf(D.xp), prog = D.xp % 100, hr = new Date().getHours();
   const greet = hr < 12 ? "อรุณสวัสดิ์" : hr < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
@@ -530,6 +548,7 @@ function renderHome(){
     `<h3 class="h3">⚔️ เควสห้องเรียนที่ต้องเคลียร์</h3>` +
     (pend.length ? pend.slice(0, 3).map(sharedQuestItem).join("") : empty("✨", "ไม่มีเควสค้าง เยี่ยมมาก!")) +
     (pend.length > 3 ? `<button class="btn sm more-btn" data-act="page" data-page="quests">ดูเควสทั้งหมด (${pend.length}) ▶</button>` : "") +
+    upcomingActs() +
     leaderboardHtml() +
     `<h3 class="h3">🏆 ความสำเร็จ (${D.badges.length}/${BADGES.length})</h3>
      <div class="badges">${BADGES.map((b, i) => `<div class="badge box pop ${D.badges.includes(b.id) ? "" : "locked"}" style="--i:${i}" title="${b.desc}">
@@ -617,7 +636,8 @@ function renderActivities(){
     pageHead("🎪", "กิจกรรมห้องเรียน", `บอร์ดประกาศกิจกรรมและงานกลุ่มของห้อง ${ROOM}`) +
     `<div class="toolbar pop"><span class="spacer"></span>
      ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-act-modal">+ เพิ่มกิจกรรมใหม่</button>` : ``}</div>` +
-    (classActivities.length ? [...classActivities].sort((a, b) => a.date.localeCompare(b.date)).map((a, i) => `
+    (actsErr ? `<div class="alert box pop"><span class="c-icon">⚠️</span><div><b>โหลดกิจกรรมไม่ได้</b><div class="muted small">${esc(actsErr)}</div></div></div>` : "") +
+    (!actsErr && classActivities.length ? [...classActivities].sort((a, b) => (daysLeft(actEnd(a)) < 0) - (daysLeft(actEnd(b)) < 0) || a.date.localeCompare(b.date)).map((a, i) => `
       <div class="quest box pop ${daysLeft(actEnd(a)) < 0 ? "past" : ""}" style="--c:#f59e0b;--i:${i}">
         <div class="q-info">
           <div class="q-title">${esc(a.title)}</div>
@@ -627,8 +647,8 @@ function renderActivities(){
             ${a.assignee ? `<span class="tag gray">👤 ${esc(a.assignee)}</span>` : ""}
           </div>
         </div>
-        ${ROLE === 'leader' ? `<button class="del" data-act="del-act" data-id="${a.id}">✕</button>` : ""}
-      </div>`).join("") : empty("🎪", "ยังไม่มีประกาศกิจกรรมในห้องตอนนี้"));
+        ${ROLE === 'leader' ? `<button class="del" data-act="edit-act" data-id="${esc(a.id)}" title="แก้ไข">✏️</button><button class="del" data-act="del-act" data-id="${esc(a.id)}" title="ลบ">✕</button>` : ""}
+      </div>`).join("") : actsErr ? "" : empty("🎪", "ยังไม่มีประกาศกิจกรรมในห้องตอนนี้"));
 }
 
 function itemsOn(ds){
@@ -814,8 +834,16 @@ function openModal(kind, item){
     f["url"].value = item?.url || ""; f["description"].value = item?.description || "";
     bookCover = item?.cover || null; setCoverPreview(bookCover);
   } else {
-    const d = $("#actForm [name=date]"); if (!d.value) d.value = iso(new Date());
-    $("#actForm [name=end_date]").min = d.value;
+    const f = $("#actForm").elements, editing = !!item;
+    $("#actFormTitle").textContent = editing ? "✏️ แก้ไขกิจกรรม" : "🎪 เพิ่มกิจกรรมห้องเรียน";
+    $("#actSubmit").textContent = editing ? "บันทึกการแก้ไข" : "บันทึกกิจกรรม";
+    f["id"].value = item?.id || "";
+    if (editing){
+      f["title"].value = item.title || ""; f["date"].value = item.date || ""; f["end_date"].value = item.end_date || "";
+      f["assignee"].value = item.assignee || ""; f["description"].value = item.description || "";
+    }
+    if (!f["date"].value) f["date"].value = iso(new Date());
+    f["end_date"].min = f["date"].value;
   }
   m.classList.add("open");
   setTimeout(() => $(`#${kind}Form [name=title]`)?.focus(), 80);
@@ -825,6 +853,7 @@ function closeModal(){
   $("#modal").classList.remove("open");
   $("#questForm").reset(); $("#actForm").reset(); $("#bookForm").reset();
   $("#bookForm").elements["id"].value = ""; bookCover = null; setCoverPreview(null);
+  $("#actForm").elements["id"].value = "";
   $("#questForm").elements["id"].value = "";   // hidden input ไม่ถูก reset เอง
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
@@ -846,22 +875,45 @@ $("#questForm").onsubmit = async e => {
   finally { saving = false; btn.disabled = false; }
 };
 
+// บันทึกกิจกรรม: ถ้าฐานข้อมูลไม่มีคอลัมน์ไหน / id ไม่ใช่ text ระบบจะตัดฟิลด์นั้นแล้วลองใหม่เอง
+async function writeAct(editId, data){
+  const dropped = [];
+  for (let i = 0; i < 5; i++){
+    try {
+      if (editId) await sb(`class_activities?id=eq.${enc(editId)}`, "PATCH", data);
+      else await sb("class_activities", "POST", data);
+      return dropped;
+    } catch (err) {
+      const e = errInfo(err), m = e.msg;
+      const col = (m.match(/'(\w+)' column/) || m.match(/column "?(\w+)"?[^]*does not exist/) || [])[1];
+      if (col && col in data && !["title", "date", "room_target"].includes(col)){ delete data[col]; dropped.push(col); continue; }
+      if (!editId && "id" in data && e.code === "22P02"){ delete data.id; dropped.push("id"); continue; }
+      throw err;
+    }
+  }
+  throw new Error("ลองบันทึกหลายครั้งแล้วไม่สำเร็จ");
+}
+
 $("#actForm").onsubmit = async e => {
   e.preventDefault();
   if (saving || ROLE !== "leader") return;
-  const f = e.target.elements;
-  const data = { id: uid(), title: f["title"].value.trim(), description: f["description"].value.trim(),
+  const f = e.target.elements, editId = f["id"].value;
+  const data = { title: f["title"].value.trim(), description: f["description"].value.trim(),
     date: f["date"].value, room_target: ROOM, assignee: f["assignee"].value.trim() };
   const end = f["end_date"].value;
+  if (!data.title) return toast("⚠️ ใส่ชื่อกิจกรรมก่อน");
+  if (!data.date) return toast("⚠️ เลือกวันที่เริ่มก่อน");
   if (end && end < data.date) return toast("⚠️ วันสิ้นสุดต้องไม่ก่อนวันเริ่ม");
-  if (end && end > data.date) data.end_date = end;   // ไม่ส่งฟิลด์ถ้าไม่ได้เลือก (ฐานข้อมูลเก่าก็ยังใช้ได้)
-  if (!data.title) return;
+  if (editId) data.end_date = end && end > data.date ? end : null;
+  else { data.id = uid(); if (end && end > data.date) data.end_date = end; }
   const btn = e.target.querySelector("[type=submit]"); saving = true; btn.disabled = true;
   try {
-    await sb("class_activities", "POST", data);
-    closeModal(); sfx(); toast("🎪 เพิ่มกิจกรรมห้องสำเร็จ!");
+    const dropped = await writeAct(editId, data);
+    closeModal(); sfx();
+    toast(editId ? "✏️ แก้ไขกิจกรรมแล้ว" : "🎪 เพิ่มกิจกรรมห้องสำเร็จ!");
+    if (dropped.includes("end_date")) setTimeout(() => toast("ℹ️ ตารางยังไม่มีคอลัมน์ end_date (บันทึกวันสิ้นสุดไม่ได้) · รัน schema.sql", 5000), 2400);
     commit();
-  } catch (err) { console.error(err); toast("⚠️ บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+  } catch (err) { console.error(err); toast("⚠️ บันทึกไม่สำเร็จ: " + friendlyErr(err, "class_activities"), 5000); }
   finally { saving = false; btn.disabled = false; }
 };
 
@@ -904,6 +956,7 @@ document.addEventListener("click", async e => {
     case "logout":    if (confirm("ต้องการออกจากระบบใช่ไหม?")) logout(); break;
     case "open-quest-modal": openModal("quest"); break;
     case "open-act-modal":   openModal("act"); break;
+    case "edit-act": { const a = classActivities.find(x => String(x.id) === id); if (a) openModal("act", a); break; }
     case "close":     closeModal(); break;
     case "filter":    qFilter = t.dataset.f; sfx(); renderQuests(); break;
     case "toggle-shared": toggleSharedQuest(id || t.closest("[data-id]")?.dataset.id, t); break;
@@ -977,7 +1030,7 @@ fillTeachers();
 $("#subjectList").innerHTML = Object.values(GROUPS).map(g => `<option value="${g.name}">`).join("");
 const session = localStorage.getItem("ms_session");
 session ? startApp(session) : showAuth();
-const classSig = () => JSON.stringify([sharedQuests, classActivities, membersErr,
+const classSig = () => JSON.stringify([sharedQuests, classActivities, membersErr, actsErr,
   members.map(m => [m.username, (m.data?.hw || []).filter(h => h.done).length, m.data?.xp || 0])]);
 async function refreshClass(){
   if (!user || document.hidden || $("#modal").classList.contains("open")) return;
