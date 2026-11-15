@@ -164,7 +164,7 @@ input:focus,select:focus,textarea:focus{transform:translate(-1px,-1px); box-shad
 }
 .check:active{transform:translate(2px,2px);box-shadow:none}
 .quest.done .check{background:var(--xp);color:#14532d}
-.q-info{flex:1;min-width:0;cursor:pointer}
+.q-info{flex:1;min-width:0}
 .q-title{font-weight:700;font-size:17px}
 .quest.done .q-title{text-decoration:line-through;opacity:.5}
 .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -251,17 +251,17 @@ input:focus,select:focus,textarea:focus{transform:translate(-1px,-1px); box-shad
 .day-item.done .t b{text-decoration:line-through;opacity:.5}
 
 /* Modal & Toast */
-.modal{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:20px;pointer-events:none}
-.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);opacity:0;transition:opacity .2s}
-.modal{visibility:hidden}
-.modal.open{pointer-events:auto;visibility:visible}
-.modal-content{position:relative;background:none!important;border:0!important;box-shadow:none!important;width:min(100%,500px)}
-.modal-content .modal-box{width:100%}
-.close-btn{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer;font-size:14px;line-height:1}
+.modal{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:20px;overflow-y:auto;visibility:hidden;pointer-events:none}
+.modal.open{visibility:visible;pointer-events:auto}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,10,20,.55);backdrop-filter:blur(6px);opacity:0;transition:opacity .2s}
 .modal.open .modal-backdrop{opacity:1}
-.modal-box{position:relative;width:min(100%,500px);padding:28px;display:none;flex-direction:column;gap:16px;box-shadow:8px 8px 0 var(--shadow)}
-.modal[data-form=quest].open #questForm,.modal[data-form=event].open #eventForm{display:flex;animation:slideUp .25s ease}
-.modal-box h2{font-family:var(--px);font-size:14px;line-height:1.6;margin-bottom:4px}
+.modal-content{position:relative;width:min(100%,520px);margin:auto}
+.modal-box{position:relative;width:100%;padding:28px;display:none;flex-direction:column;gap:16px;box-shadow:8px 8px 0 var(--shadow)}
+.modal[data-form=quest].open #questForm,.modal[data-form=act].open #actForm{display:flex;animation:slideUp .25s ease}
+.modal-box h2{font-family:var(--px);font-size:14px;line-height:1.7;margin:0 44px 4px 0}
+.close-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:10px;background:var(--panel);color:var(--text);font-size:14px;cursor:pointer;box-shadow:2px 2px 0 var(--shadow);transition:.1s}
+.close-btn:hover{background:#ff3b30;color:#fff}
+.close-btn:active{transform:translate(2px,2px);box-shadow:none}
 
 .toast{
   position:fixed;top:24px;left:50%;transform:translate(-50%,-220%);z-index:60;
@@ -312,4 +312,56 @@ input::-webkit-credentials-auto-fill-button {
 /* ปิดการแสดงปุ่มเคลียร์เฉพาะกิจของ Edge */
 ::-webkit-clear-button {
   display: none !important;
+}
+
+/* ===================== v2: ปรับโฉม ===================== */
+body{background-image:
+  radial-gradient(1100px 480px at 88% -8%, color-mix(in srgb,var(--accent) 16%,transparent), transparent 62%),
+  radial-gradient(900px 480px at -8% 108%, color-mix(in srgb,var(--gold) 16%,transparent), transparent 60%)}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(360deg);opacity:0}}
+.pop{animation-fill-mode:backwards;animation-delay:calc(var(--i,0) * 45ms)}
+.page.quiet .pop{animation:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--shadow)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--shadow)}
+.btn.primary:hover{filter:brightness(1.08)}
+::selection{background:var(--accent);color:#fff}
+
+.sidebar{backdrop-filter:blur(10px)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px}
+.brand span{font-size:30px}
+.brand b{font-family:var(--px);font-size:11px;line-height:1.7}
+.brand b em{font-style:normal;color:var(--accent)}
+.side-foot{margin-top:auto;display:flex;gap:10px}
+.side-foot .btn{flex:1}
+.page-title{background:var(--accent-gradient);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:2px}
+
+.quest{position:relative;flex-wrap:wrap;transition:transform .15s,box-shadow .15s,opacity .35s}
+.quest:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--shadow)}
+.quest.done{background:color-mix(in srgb,var(--xp) 7%,var(--panel))}
+.quest.leaving{opacity:0;transform:translateX(48px) scale(.97);pointer-events:none}
+.check{width:36px;height:36px;font-size:18px}
+.check:hover{background:color-mix(in srgb,var(--xp) 28%,var(--panel))}
+.quest-actions{margin-left:auto}
+.tabular{font-variant-numeric:tabular-nums}
+
+.progress{margin-top:14px;padding-top:12px;border-top:2px dashed var(--line)}
+.progress-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:14px}
+.who h4{font-size:13px;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;margin:0 6px 6px 0;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid var(--line);background:var(--bg)}
+.who .ok .chip{background:color-mix(in srgb,var(--xp) 18%,var(--panel));border-color:color-mix(in srgb,var(--xp) 55%,transparent)}
+
+.player{box-shadow:6px 6px 0 var(--shadow)}
+.h3{border-bottom-style:solid;border-bottom-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.empty{border:2px dashed var(--line);border-radius:var(--radius);background:color-mix(in srgb,var(--panel) 60%,transparent)}
+.toast{max-width:calc(100vw - 32px);white-space:normal;text-align:center}
+
+@media (max-width:768px){
+  .side-foot,.brand{display:none}
+  .quest-actions{width:100%;justify-content:flex-end}
+  .quest .del{position:absolute;top:8px;right:8px}
+  .modal-box{padding:22px 18px}
+  .modal-box .row{flex-direction:column}
+  .page-head{flex-wrap:wrap}
 }

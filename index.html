@@ -43,7 +43,9 @@
           <span data-av="🚀">🚀</span>
         </div>
       </div>
-      <label>ชื่อผู้ใช้ <input name="username" required autocapitalize="off" autocorrect="off" placeholder="username (ถ้าเป็นหัวหน้า ใส่ชื่อเฉพาะ)"></label>
+      <label>ชื่อผู้ใช้ 
+  <input name="username" required autocomplete="off" data-lpignore="true" spellcheck="false" placeholder="username (ถ้าเป็นหัวหน้า ใส่ชื่อเฉพาะ)">
+</label>
       <label>รหัสผ่าน <input name="password" type="password" required minlength="4" placeholder="รหัสผ่าน"></label>
       <button class="btn primary" type="submit">START ▶</button>
       <p class="auth-msg" id="authMsg"></p>
@@ -54,6 +56,7 @@
 <!-- ========== ตัวแอปหลัก ========== -->
 <div class="app hidden" id="app">
   <aside class="sidebar">
+    <div class="brand"><span>🎒</span><b>SCHOOL<br><em>QUEST</em></b></div>
     <div class="profile box">
       <div class="avatar" id="avatarDisplay">🐱</div>
       <div style="min-width:0">
@@ -68,6 +71,10 @@
       <button data-act="page" data-page="activities"><span>🎪</span><em>กิจกรรมห้อง</em></button>
       <button data-act="page" data-page="calendar"><span>🗓️</span><em>ปฏิทิน</em></button>
     </nav>
+    <div class="side-foot">
+      <button class="btn sm" data-act="theme" title="สลับโหมด">🌓</button>
+      <button class="btn sm" data-act="logout" title="ออกจากระบบ">🚪 ออก</button>
+    </div>
   </aside>
   <main class="main">
     <section class="page active" id="page-home"></section>
@@ -79,16 +86,17 @@
 </div>
 
 <div class="modal" id="modal">
-  <div class="modal-content box">
-    <button class="close-btn" data-act="close">✕</button>
-    
+  <div class="modal-backdrop" data-act="close"></div>
+  <div class="modal-content">
+
     <!-- ฟอร์มเพิ่มเควส (สำหรับหัวหน้า) -->
-    <form class="modal-box box" id="questForm" autocomplete="off" style="display:none">
+    <form class="modal-box box" id="questForm" autocomplete="off">
+      <button type="button" class="close-btn" data-act="close" aria-label="ปิด">✕</button>
       <h2>⚔️ มอบหมายเควสให้ห้อง</h2>
       <label>ชื่อเควส / การบ้าน <input name="title" required placeholder="เช่น ทำแบบฝึกหัด หน้า 50"></label>
       <div class="row">
         <label>คุณครู <select name="teacher" id="teacherSelect"></select></label>
-        <label>ประเภท 
+        <label>ประเภท
           <select name="type">
             <option value="การบ้าน">การบ้าน</option>
             <option value="งานกลุ่ม">งานกลุ่ม</option>
@@ -99,7 +107,7 @@
       </div>
       <div class="row">
         <label>กำหนดส่ง <input name="due" type="date" required></label>
-        <label>ระดับความยาก 
+        <label>ระดับความยาก
           <select name="diff">
             <option value="easy">⭐ ง่าย (+10 XP)</option>
             <option value="normal" selected>⭐⭐ ปานกลาง (+20 XP)</option>
@@ -110,12 +118,13 @@
       <label>รายละเอียดเพิ่มเติม <textarea name="note" rows="2" placeholder="เช่น ทำข้อคู่ทั้งหมด ส่งในคาบ"></textarea></label>
       <div class="row">
         <button type="button" class="btn" data-act="close">ยกเลิก</button>
-        <button type="button" class="btn primary" onclick="document.getElementById('questForm').requestSubmit()">ประกาศให้ทั้งห้อง</button>
+        <button type="submit" class="btn primary">ประกาศให้ทั้งห้อง</button>
       </div>
     </form>
 
     <!-- ฟอร์มเพิ่มกิจกรรมห้อง -->
-    <form class="modal-box box" id="actForm" autocomplete="off" style="display:none">
+    <form class="modal-box box" id="actForm" autocomplete="off">
+      <button type="button" class="close-btn" data-act="close" aria-label="ปิด">✕</button>
       <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
       <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
       <div class="row">
@@ -125,7 +134,7 @@
       <label>รายละเอียด <textarea name="description" rows="2" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea></label>
       <div class="row">
         <button type="button" class="btn" data-act="close">ยกเลิก</button>
-        <button type="button" class="btn primary" onclick="document.getElementById('actForm').requestSubmit()">บันทึกกิจกรรม</button>
+        <button type="submit" class="btn primary">บันทึกกิจกรรม</button>
       </div>
     </form>
 
