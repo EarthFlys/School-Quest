@@ -475,7 +475,7 @@ async function enableNotify(){
   if (p === "granted"){ localStorage.setItem("ms_notify", "1"); toast("🔔 เปิดแจ้งเตือนงานใกล้ส่งแล้ว"); maybeNotify(true); }
   else toast("ไม่ได้รับอนุญาตให้แจ้งเตือน");
 }
-const VAPID_PUBLIC = "BMqlPy4naqsF2whXPaQPzpkdUG3nw6WThvCW6b0yLoN91n5WRvJSjmjkMEU21c-phYF8nEEm-A_YP6iy5uUGt4Q";
+const VAPID_PUBLIC = "BMscNHuQXYM4skhXAMN1KJEFKT1MWS9uqfN1E1fseTMdMbRWw6NV5POb8aKO1t2C-dy-u5TYJl3xQzKfzVex8Ks";
 const b64u = v => { const r = atob((v + "=".repeat((4 - v.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, c => c.charCodeAt(0)); };
 async function enablePush(silent = false){
   const ok = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
