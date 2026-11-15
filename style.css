@@ -291,9 +291,8 @@ input:focus,select:focus,textarea:focus{transform:translate(-1px,-1px); box-shad
   .main{padding:24px 16px 110px}
   .quest-actions .btn{padding:6px 10px;font-size:12px}
   .reward{display:none}
-
-
-  /* ซ่อนปุ่มกากบาทเคลียร์ข้อความทุกรูปแบบในช่อง input */
+}
+/* วางไว้ข้างนอกสุด ท้ายไฟล์ style.css หรือส่วนไหนก็ได้ที่ไม่ติดปีกกา Media Query */
 input::-webkit-clear-button,
 input::-webkit-inner-spin-button,
 input::-webkit-search-cancel-button {
@@ -301,10 +300,6 @@ input::-webkit-search-cancel-button {
   -webkit-appearance: none !important;
 }
 
-/* ป้องกันไม่ให้มี pseudo-element แปลกปลอมโผล่ในช่อง input */
 input::-webkit-calendar-picker-indicator {
   opacity: 0;
 }
-
-}
-
