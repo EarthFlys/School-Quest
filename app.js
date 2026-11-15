@@ -68,8 +68,8 @@ const DIFF = { easy:{xp:10,icon:"⭐"}, normal:{xp:20,icon:"⭐⭐"}, hard:{xp:4
 const PETS = ["🥚","🐣","🐥","🐤","🐔","🦅","🐉"];
 const TITLES = ["มือใหม่","นักเรียนฝึกหัด","นักผจญภัย","อัศวินการบ้าน","จอมเวทย์ความรู้","ปรมาจารย์","ตำนานห้องเรียน"];
 const QUOTES = [
-  "หัวหน้าห้องประกาศงานใหม่แล้ว เช็กกันด้วยนะ!", "สามัคคีคือพลัง เคลียร์เควสให้ไว!",
-  "เลเวลอัพอยู่ไม่ไกล ลุยเลย!", "ห้องเราต้องที่ 1!", "ข้อมูลซิงค์กับเพื่อนๆ ทุกคนในห้องแล้ว ✨"
+  "หัวหน้าห้องประกาศงานใหม่แล้วจ้า เช็กกันด้วยเด้อ!", "อย่าลืมเช็คงานนะงับเพื่อนๆ จุ้บๆ",
+  "ตามงานด้วยเด้อ", "งานก็เหมือนเงิน ไม่มี", "หัวหน้าห้องลั่นจัด"
 ];
 const EV = { "สอบ":{icon:"📝",color:"#ef4444"}, "กิจกรรม":{icon:"🎪",color:"#a855f7"}, "วันหยุด":{icon:"🏖️",color:"#22c55e"}, "อื่นๆ":{icon:"📌",color:"#64748b"} };
 const levelOf = xp => Math.floor(xp / 100) + 1;
@@ -137,6 +137,7 @@ const newData = () => ({ hw:[], xp:0, coins:0, streak:0, lastDay:"", done:0, bad
 
 let user = null, NAME = "", ROOM = "ม.6/12", ROLE = "student", AVATAR = "🐱", D = null;
 let sharedQuests = [], classActivities = [], members = [], membersErr = "", openQuests = new Set();
+let books = [], bookErr = "", bookSubject = "all", bookSearch = "", bookCover = null;
 let page = "home", qFilter = "todo", qSearch = "", saving = false;
 let calY, calM, selDate = iso(new Date());
 let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
@@ -175,7 +176,7 @@ async function persist(){
     return false;
   }
 }
-async function commit(){ await persist(); await loadClassData(); renderAll(); }
+async function commit(){ await persist(); await loadClassData(); await loadBooks(); renderAll(); }
 
 const isQuestDone = id => D.hw.some(h => h.id === id && h.done);
 const memberDone = (m, id) => m.username === user ? isQuestDone(id)
@@ -279,7 +280,7 @@ async function startApp(username){
     D = Object.assign(newData(), u.data);
     AVATAR = D.avatar || "🐱";
     
-    await loadClassData();
+    await loadClassData(); await loadBooks();
     $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
     dailyCheck(); renderAll(); showPage("home"); maybeNotify();
   } catch (err) {
@@ -447,7 +448,15 @@ function summaryText(){
 function applySearch(){
   qsa("#page-quests .quest").forEach(c => c.classList.toggle("hidden", !!qSearch && !(c.dataset.q || "").includes(qSearch)));
 }
-const actWhen = ds => { const d = daysLeft(ds); return d < 0 ? "ผ่านไปแล้ว" : d === 0 ? "วันนี้!" : d === 1 ? "พรุ่งนี้" : `อีก ${d} วัน`; };
+const actEnd = a => (a.end_date && a.end_date > a.date) ? a.end_date : a.date;
+const actRange = a => actEnd(a) !== a.date ? `${fmtShort(a.date)} – ${fmtShort(a.end_date)}` : fmtShort(a.date);
+const actWhen = a => {
+  const st = daysLeft(a.date), en = daysLeft(actEnd(a));
+  if (en < 0) return "ผ่านไปแล้ว";
+  if (st > 0) return st === 1 ? "เริ่มพรุ่งนี้" : `เริ่มอีก ${st} วัน`;
+  if (en === 0) return st === 0 ? "วันนี้!" : "วันสุดท้าย!";
+  return `กำลังจัดอยู่ · เหลือ ${en} วัน`;
+};
 
 async function enableNotify(){
   if (!("Notification" in window)) return toast("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน");
@@ -609,12 +618,12 @@ function renderActivities(){
     `<div class="toolbar pop"><span class="spacer"></span>
      ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-act-modal">+ เพิ่มกิจกรรมใหม่</button>` : ``}</div>` +
     (classActivities.length ? [...classActivities].sort((a, b) => a.date.localeCompare(b.date)).map((a, i) => `
-      <div class="quest box pop ${daysLeft(a.date) < 0 ? "past" : ""}" style="--c:#f59e0b;--i:${i}">
+      <div class="quest box pop ${daysLeft(actEnd(a)) < 0 ? "past" : ""}" style="--c:#f59e0b;--i:${i}">
         <div class="q-info">
           <div class="q-title">${esc(a.title)}</div>
           ${a.description ? `<div class="muted small">${esc(a.description)}</div>` : ""}
           <div class="tags">
-            <span class="tag">📅 ${fmtShort(a.date)} · ${actWhen(a.date)}</span>
+            <span class="tag">📅 ${actRange(a)} · ${actWhen(a)}</span>
             ${a.assignee ? `<span class="tag gray">👤 ${esc(a.assignee)}</span>` : ""}
           </div>
         </div>
@@ -626,7 +635,7 @@ function itemsOn(ds){
   return [
     ...sharedQuests.filter(q => q.due === ds).map(q => ({ kind:"shared", id:q.id, title:q.title, short:q.teacher,
       color:"#5856d6", done:isQuestDone(q.id), sub:`⚔️ เควสห้อง · ${q.teacher}` })),
-    ...classActivities.filter(a => a.date === ds).map(a => ({ kind:"act", id:a.id, title:a.title,
+    ...classActivities.filter(a => a.date <= ds && ds <= actEnd(a)).map(a => ({ kind:"act", id:a.id, title:a.title,
       short:`🎪${a.title}`, color:"#f59e0b", sub:`🎪 กิจกรรมห้อง` }))
   ];
 }
@@ -667,6 +676,77 @@ function renderCalendar(){
     </div>`;
 }
 
+// ===================== มุมหนังสือ =====================
+async function loadBooks(){
+  try { books = (await sb(`class_books?room=eq.${enc(ROOM)}&select=*`)) || []; bookErr = ""; }
+  catch (err) { books = []; bookErr = String(err.message || err).slice(0, 160); console.error("โหลดหนังสือไม่สำเร็จ:", err); }
+}
+const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "#";
+// ดึงปกอัตโนมัติจากไฟล์ Google Drive ที่แชร์เป็น "ทุกคนที่มีลิงก์"
+function driveThumb(u){
+  if (!u || /\/folders\//.test(u)) return "";
+  const m = u.match(/\/d\/([\w-]{15,})/) || u.match(/[?&]id=([\w-]{15,})/);
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w480` : "";
+}
+const hueOf = t => [...String(t)].reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+
+function fileToCover(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const W = 270, H = 360, c = document.createElement("canvas"); c.width = W; c.height = H;
+      const x = c.getContext("2d"), r = Math.max(W / img.width, H / img.height), w = img.width * r, h = img.height * r;
+      x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("อ่านรูปไม่ได้")); };
+    img.src = url;
+  });
+}
+function setCoverPreview(src){
+  const p = $("#coverPrev");
+  p.style.backgroundImage = src ? `url("${src}")` : ""; p.textContent = src ? "" : "📘";
+}
+function applyBookSearch(){
+  qsa("#page-books .book").forEach(c => c.classList.toggle("hidden", !!bookSearch && !(c.dataset.q || "").includes(bookSearch)));
+}
+
+function renderBooks(){
+  const subjects = [...new Set(books.map(b => b.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b, "th"));
+  if (bookSubject !== "all" && !subjects.includes(bookSubject)) bookSubject = "all";
+  const chips = ["all", ...subjects].map(s => `<button type="button" data-act="book-subject" data-s="${esc(s)}" class="${bookSubject === s ? "active" : ""}">${s === "all" ? "ทั้งหมด" : esc(s)}</button>`).join("");
+  const list = books.filter(b => bookSubject === "all" || b.subject === bookSubject)
+    .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+  const cards = list.map((b, i) => {
+    const src = b.cover || driveThumb(b.url), isNew = b.created_at && Date.now() - new Date(b.created_at) < 7 * 864e5;
+    return `<article class="book box pop" data-id="${esc(b.id)}" data-q="${esc((b.title + " " + (b.subject || "") + " " + (b.author || "") + " " + (b.description || "")).toLowerCase())}" style="--i:${Math.min(i, 10)}">
+      <div class="book-cover" style="--h:${hueOf(b.title)}">
+        <span class="bc-title">${esc(b.title)}</span>
+        ${src ? `<img class="book-img" loading="lazy" referrerpolicy="no-referrer" alt="" src="${esc(src)}">` : ""}
+        ${isNew ? `<span class="new-badge">NEW</span>` : ""}
+      </div>
+      <div class="book-info">
+        <b class="book-title">${esc(b.title)}</b>
+        <div class="tags">${b.subject ? `<span class="tag">${esc(b.subject)}</span>` : ""}${b.author ? `<span class="tag gray">✍️ ${esc(b.author)}</span>` : ""}</div>
+        ${b.description ? `<div class="muted small book-desc">${esc(b.description)}</div>` : ""}
+        <div class="book-actions">
+          <a class="btn primary sm" href="${esc(safeUrl(b.url))}" target="_blank" rel="noopener noreferrer">📖 เปิดอ่าน</a>
+          ${ROLE === "leader" ? `<button class="del" data-act="edit-book" data-id="${esc(b.id)}" title="แก้ไข">✏️</button><button class="del" data-act="del-book" data-id="${esc(b.id)}" title="ลบ">✕</button>` : ""}
+        </div>
+      </div></article>`;
+  }).join("");
+  PUT.books =
+    pageHead("📚", "มุมหนังสือ", `หนังสือและเอกสารประกอบการเรียนของห้อง ${esc(ROOM)} · ${books.length} เล่ม · เก็บไว้ใน Google Drive`) +
+    `<div class="toolbar pop"><div class="chips">${chips}</div>
+      <input class="search" data-bsearch placeholder="🔍 ค้นหาหนังสือ" value="${esc(bookSearch)}"><span class="spacer"></span>
+      ${ROLE === "leader" ? `<button class="btn primary sm" data-act="open-book-modal">+ เพิ่มหนังสือ</button>` : ""}</div>` +
+    (bookErr ? `<div class="alert box pop"><span class="c-icon">⚠️</span><div><b>โหลดมุมหนังสือไม่ได้</b>
+        <div class="muted small">ยังไม่ได้สร้างตาราง class_books? ให้รันไฟล์ schema.sql ใน Supabase · ${esc(bookErr)}</div></div></div>`
+      : list.length ? `<div class="book-grid">${cards}</div>`
+      : empty("📚", ROLE === "leader" ? "ยังไม่มีหนังสือ กด “+ เพิ่มหนังสือ” เพื่อแปะลิงก์จาก Google Drive" : "ยังไม่มีหนังสือในมุมนี้ รอหัวหน้าห้องมาเพิ่มนะ"));
+  applyBookSearch();
+}
+
 const seenText = ds => {
   if (!ds) return ["off", "ยังไม่เคยเข้า"];
   const d = -daysLeft(ds);
@@ -693,7 +773,7 @@ function renderMembers(){
     `<div class="mem-list">${list}</div>`;
 }
 
-function renderAll(){ renderSide(); renderHome(); renderTimetable(); renderQuests(); renderActivities(); renderCalendar(); renderMembers(); }
+function renderAll(){ renderSide(); renderHome(); renderTimetable(); renderQuests(); renderActivities(); renderCalendar(); renderMembers(); renderBooks(); }
 
 function showPage(p){
   page = p;
@@ -702,6 +782,8 @@ function showPage(p){
   const el = $("#page-" + p);
   el.classList.remove("quiet", "pop"); void el.offsetWidth; el.classList.add("pop");
   scrollTo(0, 0);
+  try { $(".nav button.active")?.scrollIntoView({ inline: "center", block: "nearest" }); } catch {}
+  if (p === "books") loadBooks().then(renderBooks);
 }
 
 // ===================== 5) Modal ฟอร์ม =====================
@@ -723,16 +805,26 @@ function openModal(kind, item){
       f["title"].value = item.title; f["teacher"].value = item.teacher; f["type"].value = item.type;
       f["due"].value = item.due; f["diff"].value = item.diff || "normal"; f["note"].value = item.note || "";
     } else if (!f["due"].value) f["due"].value = iso(new Date());
+  } else if (kind === "book"){
+    const f = $("#bookForm").elements, editing = !!item;
+    $("#bookFormTitle").textContent = editing ? "✏️ แก้ไขหนังสือ" : "📚 เพิ่มหนังสือเข้ามุมหนังสือ";
+    $("#bookSubmit").textContent = editing ? "บันทึกการแก้ไข" : "เพิ่มหนังสือ";
+    f["id"].value = item?.id || "";
+    f["title"].value = item?.title || ""; f["subject"].value = item?.subject || ""; f["author"].value = item?.author || "";
+    f["url"].value = item?.url || ""; f["description"].value = item?.description || "";
+    bookCover = item?.cover || null; setCoverPreview(bookCover);
   } else {
     const d = $("#actForm [name=date]"); if (!d.value) d.value = iso(new Date());
+    $("#actForm [name=end_date]").min = d.value;
   }
   m.classList.add("open");
-  setTimeout(() => $(kind === "quest" ? "#questForm [name=title]" : "#actForm [name=title]")?.focus(), 80);
+  setTimeout(() => $(`#${kind}Form [name=title]`)?.focus(), 80);
 }
 
 function closeModal(){
   $("#modal").classList.remove("open");
-  $("#questForm").reset(); $("#actForm").reset();
+  $("#questForm").reset(); $("#actForm").reset(); $("#bookForm").reset();
+  $("#bookForm").elements["id"].value = ""; bookCover = null; setCoverPreview(null);
   $("#questForm").elements["id"].value = "";   // hidden input ไม่ถูก reset เอง
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
@@ -760,6 +852,9 @@ $("#actForm").onsubmit = async e => {
   const f = e.target.elements;
   const data = { id: uid(), title: f["title"].value.trim(), description: f["description"].value.trim(),
     date: f["date"].value, room_target: ROOM, assignee: f["assignee"].value.trim() };
+  const end = f["end_date"].value;
+  if (end && end < data.date) return toast("⚠️ วันสิ้นสุดต้องไม่ก่อนวันเริ่ม");
+  if (end && end > data.date) data.end_date = end;   // ไม่ส่งฟิลด์ถ้าไม่ได้เลือก (ฐานข้อมูลเก่าก็ยังใช้ได้)
   if (!data.title) return;
   const btn = e.target.querySelector("[type=submit]"); saving = true; btn.disabled = true;
   try {
@@ -769,6 +864,35 @@ $("#actForm").onsubmit = async e => {
   } catch (err) { console.error(err); toast("⚠️ บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง"); }
   finally { saving = false; btn.disabled = false; }
 };
+
+$("#bookForm").onsubmit = async e => {
+  e.preventDefault();
+  if (saving || ROLE !== "leader") return;
+  const f = e.target.elements, editId = f["id"].value;
+  let url = f["url"].value.trim();
+  if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+  if (!/^https?:\/\/[^\s]+\.[^\s]+/i.test(url)) return toast("⚠️ ใส่ลิงก์ให้ถูกต้อง เช่น https://drive.google.com/...");
+  const data = { title: f["title"].value.trim(), subject: f["subject"].value.trim(), author: f["author"].value.trim(),
+    description: f["description"].value.trim(), url, cover: bookCover };
+  if (!data.title) return;
+  const btn = e.target.querySelector("[type=submit]"); saving = true; btn.disabled = true;
+  try {
+    if (editId) await sb(`class_books?id=eq.${enc(editId)}`, "PATCH", data);
+    else await sb("class_books", "POST", { id: uid(), ...data, room: ROOM, created_by: user });
+    closeModal(); sfx(); toast(editId ? "✏️ แก้ไขหนังสือแล้ว" : "📚 เพิ่มหนังสือเข้ามุมหนังสือแล้ว!");
+    commit();
+  } catch (err) { console.error(err); toast("⚠️ บันทึกไม่สำเร็จ (รูปปกใหญ่เกินไปหรือยังไม่ได้รัน schema.sql?)"); }
+  finally { saving = false; btn.disabled = false; }
+};
+$("#coverFile").addEventListener("change", async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try { bookCover = await fileToCover(file); setCoverPreview(bookCover); }
+  catch { toast("⚠️ อ่านรูปไม่ได้ ลองรูปอื่น"); }
+  e.target.value = "";
+});
+$("#coverClear").onclick = () => { bookCover = null; setCoverPreview(null); };
+// รูปปกที่โหลดไม่ได้ → ซ่อนรูป เหลือปกสีที่มีชื่อหนังสือ
+document.addEventListener("error", e => { if (e.target.matches?.("img.book-img")) e.target.remove(); }, true);
 
 // ===================== 6) Event Listeners =====================
 document.addEventListener("click", async e => {
@@ -783,6 +907,16 @@ document.addEventListener("click", async e => {
     case "close":     closeModal(); break;
     case "filter":    qFilter = t.dataset.f; sfx(); renderQuests(); break;
     case "toggle-shared": toggleSharedQuest(id || t.closest("[data-id]")?.dataset.id, t); break;
+    case "open-book-modal": openModal("book"); break;
+    case "edit-book": { const b = books.find(x => x.id === id); if (b) openModal("book", b); break; }
+    case "pick-cover": $("#coverFile").click(); break;
+    case "book-subject": bookSubject = t.dataset.s; sfx(); renderBooks(); break;
+    case "del-book":
+      if (confirm("ลบหนังสือเล่มนี้ออกจากมุมหนังสือใช่ไหม? (ไฟล์ใน Drive ไม่ถูกลบ)")) {
+        try { await sb(`class_books?id=eq.${enc(id)}`, "DELETE"); toast("🗑️ ลบหนังสือแล้ว"); commit(); }
+        catch { toast("⚠️ ลบไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+      }
+      break;
     case "edit-shared": { const q = sharedQuests.find(x => x.id === id); if (q) openModal("quest", q); break; }
     case "copy-summary": copyText(summaryText()); break;
     case "copy-pending": {
@@ -823,6 +957,8 @@ document.addEventListener("click", async e => {
 });
 
 document.addEventListener("input", e => {
+  if (e.target.matches("#actForm [name=date]")) $("#actForm [name=end_date]").min = e.target.value;
+  if (e.target.matches("[data-bsearch]")){ bookSearch = e.target.value.trim().toLowerCase(); applyBookSearch(); }
   if (e.target.matches("[data-search]")){ qSearch = e.target.value.trim().toLowerCase(); applySearch(); }
 });
 
@@ -838,6 +974,7 @@ document.documentElement.dataset.theme = localStorage.getItem("ms_theme")
   || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 const n0 = new Date(); calY = n0.getFullYear(); calM = n0.getMonth();
 fillTeachers();
+$("#subjectList").innerHTML = Object.values(GROUPS).map(g => `<option value="${g.name}">`).join("");
 const session = localStorage.getItem("ms_session");
 session ? startApp(session) : showAuth();
 const classSig = () => JSON.stringify([sharedQuests, classActivities, membersErr,
@@ -847,6 +984,7 @@ async function refreshClass(){
   const before = classSig();
   await loadClassData();
   if (classSig() !== before) renderAll(); else { renderHome(); renderTimetable(); }
+  if (page === "books"){ await loadBooks(); renderBooks(); }
 }
 setInterval(refreshClass, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshClass(); });

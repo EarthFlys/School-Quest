@@ -71,6 +71,7 @@
       <button data-act="page" data-page="activities"><span>🎪</span><em>กิจกรรมห้อง</em></button>
       <button data-act="page" data-page="calendar"><span>🗓️</span><em>ปฏิทิน</em></button>
       <button data-act="page" data-page="members"><span>👥</span><em>สมาชิก</em></button>
+      <button data-act="page" data-page="books"><span>📚</span><em>มุมหนังสือ</em></button>
     </nav>
     <div class="side-foot">
       <button class="btn sm" data-act="theme" title="สลับโหมด">🌓</button>
@@ -84,6 +85,7 @@
     <section class="page" id="page-activities"></section>
     <section class="page" id="page-calendar"></section>
     <section class="page" id="page-members"></section>
+    <section class="page" id="page-books"></section>
   </main>
 </div>
 
@@ -131,13 +133,44 @@
       <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
       <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
       <div class="row">
-        <label>วันที่จัด <input name="date" type="date" required></label>
-        <label>ผู้รับผิดชอบ <input name="assignee" placeholder="เช่น เวรทำความสะอาดกลุ่ม 1"></label>
+        <label>วันที่เริ่ม <input name="date" type="date" required></label>
+        <label>วันสิ้นสุด (ถ้าจัดหลายวัน) <input name="end_date" type="date"></label>
       </div>
+      <label>ผู้รับผิดชอบ <input name="assignee" placeholder="เช่น เวรทำความสะอาดกลุ่ม 1"></label>
       <label>รายละเอียด <textarea name="description" rows="2" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea></label>
       <div class="row">
         <button type="button" class="btn" data-act="close">ยกเลิก</button>
         <button type="submit" class="btn primary">บันทึกกิจกรรม</button>
+      </div>
+    </form>
+
+
+    <!-- ฟอร์มเพิ่มหนังสือ -->
+    <form class="modal-box box" id="bookForm" autocomplete="off">
+      <button type="button" class="close-btn" data-act="close" aria-label="ปิด">✕</button>
+      <input type="hidden" name="id">
+      <h2 id="bookFormTitle">📚 เพิ่มหนังสือเข้ามุมหนังสือ</h2>
+      <label>ชื่อหนังสือ / เอกสาร <input name="title" required placeholder="เช่น สรุปฟิสิกส์ ม.6 เล่ม 2"></label>
+      <div class="row">
+        <label>หมวด / วิชา <input name="subject" list="subjectList" placeholder="เช่น วิทยาศาสตร์"></label>
+        <label>ผู้แต่ง / ครูผู้สอน <input name="author" placeholder="ไม่ใส่ก็ได้"></label>
+      </div>
+      <datalist id="subjectList"></datalist>
+      <label>ลิงก์ Google Drive <input name="url" required inputmode="url" placeholder="วางลิงก์ที่คัดลอกจาก Drive"></label>
+      <small class="muted">ใน Drive ให้กด แชร์ → “ทุกคนที่มีลิงก์” (ผู้ดู) เพื่อนจะได้เปิดได้</small>
+      <label>รายละเอียดสั้นๆ <textarea name="description" rows="2" placeholder="เช่น ใช้ติวสอบกลางภาค บทที่ 1–3"></textarea></label>
+      <div class="cover-pick">
+        <div class="cover-prev" id="coverPrev">📘</div>
+        <div class="cover-ctrl">
+          <button type="button" class="btn sm" data-act="pick-cover">🖼️ เลือกรูปปก</button>
+          <button type="button" class="btn sm" id="coverClear">ลบรูปปก</button>
+          <small class="muted">ไม่ใส่ก็ได้ ถ้าเป็นไฟล์ Drive ระบบจะดึงหน้าปกให้เอง</small>
+        </div>
+        <input type="file" id="coverFile" accept="image/*" hidden>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" data-act="close">ยกเลิก</button>
+        <button type="submit" class="btn primary" id="bookSubmit">เพิ่มหนังสือ</button>
       </div>
     </form>
 
