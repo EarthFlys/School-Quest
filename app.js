@@ -6,7 +6,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const LEADERS = {
   "gun": "gunzaza",
   "earthflyszx_": "earthzaza",
-  "jeen": "jeenzaza"
+  "อีกคนก็ได้": "รหัสลับของเขา"
 };
 
 async function sb(endpoint, method = "GET", body = null, headers = {}) {
@@ -217,7 +217,7 @@ qsa(".auth-tabs button").forEach(b => b.onclick = () => {
 $("#authForm").onsubmit = async e => {
   e.preventDefault();
   const f = e.target.elements, box = $(".auth-box");
-  const username = f["username"].value.trim().toLowerCase(), pw = f["password"].value;
+  const username = f["username"].value.trim().toLowerCase(), pw = f["password"].value.trim();
   const fail = msg => { $("#authMsg").textContent = msg; box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); };
   
   try {
@@ -243,8 +243,14 @@ $("#authForm").onsubmit = async e => {
       const res = await sb(`users?username=eq.${enc(username)}&select=*`);
       if (!res || res.length === 0) return fail("ไม่พบชื่อผู้ใช้นี้");
       const u = res[0];
-      const hashed = await hash(pw, u.salt);
-      if (hashed !== u.hash) return fail("รหัสผ่านไม่ถูกต้อง");
+      let hashed = await hash(pw, u.salt);
+      if (hashed !== u.hash){
+        // หัวหน้าที่รหัสตรงกับ LEADERS แต่แฮชในฐานข้อมูลเก่า/ไม่ตรง → ซ่อมให้อัตโนมัติ
+        if (isLeaderName(username) && pw === LEADERS[username]){
+          const salt = uid();
+          await sb(`users?username=eq.${enc(username)}`, "PATCH", { salt, hash: await hash(pw, salt) });
+        } else return fail("รหัสผ่านไม่ถูกต้อง");
+      }
 
       if (isLeaderName(username) && u.role !== "leader") {
         assignedRole = "leader";
