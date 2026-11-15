@@ -1,6 +1,14 @@
-// ===================== 0) ตั้งค่า SUPABASE =====================
+// ===================== 0) ตั้งค่า SUPABASE & หัวหน้าห้อง =====================
 const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_0wNEgBPE9JCxeV1Rg1M1GA_Gde0FHpt";
+
+// 👑 ตั้งค่ารายชื่อบัญชีหัวหน้าห้อง (เพิ่มชื่อและรหัสผ่านได้หลายคน)
+const LEADERS = {
+  "gun": "gunzaza",
+  "earthflyszx_": "earthzaza",
+  "อีกคนก็ได้": "รหัสลับของเขา"
+};
+
 
 async function sb(endpoint, method = "GET", body = null, headers = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -147,14 +155,13 @@ async function loadClassData(){
 async function persist(){
   if (!user) return;
   try {
-    await sb(`users?username=eq.${user}`, "PATCH", { data: D });
+    await sb(`users?username=eq.${user}`, "PATCH", { data: D, role: ROLE });
   } catch (err) {
     console.error("ซิงค์ข้อมูลไม่สำเร็จ:", err);
   }
 }
 async function commit(){ await persist(); await loadClassData(); renderAll(); }
 
-// เช็คว่าเควสห้องนี้ ติ๊กเสร็จส่วนตัวหรือยัง
 const isQuestDone = id => D.hw.some(h => h.id === id && h.done);
 const pendingShared = () => sharedQuests.filter(q => !isQuestDone(q.id)).sort((a,b) => a.due.localeCompare(b.due));
 
@@ -187,24 +194,39 @@ $("#authForm").onsubmit = async e => {
   const fail = msg => { $("#authMsg").textContent = msg; box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); };
   
   try {
+    // 🔒 ระบบล็อกหัวหน้าห้องอัตโนมัติด้วยรหัสลับ
+    let assignedRole = "student";
+    if (username === LEADER_USERNAME) {
+      if (pw !== LEADER_SECRET_PASS) return fail("รหัสผ่านหัวหน้าห้องไม่ถูกต้อง!");
+      assignedRole = "leader";
+    }
+
     if (authMode === "register"){
-      const name = f["name"].value.trim(), room = f["room"].value.trim() || "ม.6/12", role = f["role"].value;
+      const name = f["name"].value.trim(), room = f["room"].value.trim() || "ม.6/12";
       if (!name) return fail("กรุณาใส่ชื่อที่ให้เรียก");
       
       const check = await sb(`users?username=eq.${username}&select=username`);
       if (check && check.length > 0) return fail("ชื่อผู้ใช้นี้มีคนใช้แล้ว");
 
       const salt = uid(), dat = newData();
-      dat.avatar = selectedAvatar; dat.room = room; dat.role = role;
+      dat.avatar = selectedAvatar; dat.room = room; dat.role = assignedRole;
       const hashed = await hash(pw, salt);
 
-      await sb("users", "POST", { username, name, room, role, salt, hash: hashed, data: dat });
+      await sb("users", "POST", { username, name, room, role: assignedRole, salt, hash: hashed, data: dat });
     } else {
       const res = await sb(`users?username=eq.${username}&select=*`);
       if (!res || res.length === 0) return fail("ไม่พบชื่อผู้ใช้นี้");
       const u = res[0];
       const hashed = await hash(pw, u.salt);
       if (hashed !== u.hash) return fail("รหัสผ่านไม่ถูกต้อง");
+
+      // อัปเดตสถานะหัวหน้าให้ตรงกันเสมอถ้าใช้ชื่อนี้
+      if (username === LEADER_USERNAME && u.role !== "leader") {
+        assignedRole = "leader";
+        await sb(`users?username=eq.${username}`, "PATCH", { role: "leader" });
+      } else {
+        assignedRole = u.role || "student";
+      }
     }
     localStorage.setItem("ms_session", username);
     e.target.reset(); sfx("level");
@@ -221,6 +243,10 @@ async function startApp(username){
     if (!res || res.length === 0) return showAuth();
     const u = res[0];
     user = u.username; NAME = u.name; ROOM = u.room || "ม.6/12"; ROLE = u.role || "student";
+    
+    // บังคับเช็คอีกรอบเพื่อความชัวร์
+    if (username === LEADER_USERNAME) ROLE = "leader";
+
     D = Object.assign(newData(), u.data);
     AVATAR = D.avatar || "🐱";
     
@@ -454,7 +480,7 @@ function renderQuests(){
   $("#page-quests").innerHTML =
     pageHead("⚔️", "เควสห้องเรียน", `สมาชิกห้อง ${ROOM} เห็นงานชุดเดียวกันทั้งหมด`) +
     `<div class="toolbar pop"><div class="seg">${segs}</div><span class="spacer"></span>
-     ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-quest-modal">+ มอบหมายเควสให้ห้อง</button>` : `<small class="muted">👑 หัวหน้าห้องเท่านั้นที่เพิ่มเควสได้</small>`}</div>` +
+     ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-quest-modal">+ มอบหมายเควสให้ห้อง</button>` : `<small class="muted">👑 เฉพาะหัวหน้าห้องที่กำหนด</small>`}</div>` +
     (list.length ? list.map(sharedQuestItem).join("")
       : empty(qFilter === "done" ? "📭" : "🎯", "ไม่มีเควสในหมวดหมู่นี้ เยี่ยมมาก!"));
 }

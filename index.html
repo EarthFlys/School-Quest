@@ -33,12 +33,6 @@
       <div class="only-register reg-fields">
         <label>ชื่อที่ให้เรียก <input name="name" placeholder="เช่น ต้น"></label>
         <label>ห้องเรียน <input name="room" placeholder="เช่น ม.6/12" value="ม.6/12"></label>
-        <label>สถานะ / บทบาท 
-          <select name="role">
-            <option value="student">👨‍🎓 นักเรียนทั่วไป</option>
-            <option value="leader">👑 หัวหน้าห้อง / ผู้ดูแล</option>
-          </select>
-        </label>
         <label>เลือกรูปโปรไฟล์ของคุณ</label>
         <div class="avatar-picker" id="avatarPicker">
           <span class="sel" data-av="🐱">🐱</span>
@@ -49,8 +43,8 @@
           <span data-av="🚀">🚀</span>
         </div>
       </div>
-      <label>ชื่อผู้ใช้ <input name="username" required autocapitalize="off" autocorrect="off" placeholder="username"></label>
-      <label>รหัสผ่าน <input name="password" type="password" required minlength="4" placeholder="อย่างน้อย 4 ตัว"></label>
+      <label>ชื่อผู้ใช้ <input name="username" required autocapitalize="off" autocorrect="off" placeholder="username (ถ้าเป็นหัวหน้า ใส่ชื่อเฉพาะ)"></label>
+      <label>รหัสผ่าน <input name="password" type="password" required minlength="4" placeholder="รหัสผ่าน"></label>
       <button class="btn primary" type="submit">START ▶</button>
       <p class="auth-msg" id="authMsg"></p>
     </form>
@@ -88,7 +82,6 @@
 <div class="modal" id="modal">
   <div class="modal-backdrop" data-act="close"></div>
   
-  <!-- ฟอร์มเพิ่มเควส (หัวหน้าห้องสั่งงาน) -->
   <form class="modal-box box" id="questForm" autocomplete="off">
     <h2 id="qHead">⚔️ มอบหมายเควสให้ห้อง</h2>
     <label>ชื่องาน / เควส <input name="title" required placeholder="เช่น การบ้านฟิสิกส์ หน้า 45"></label>
@@ -108,7 +101,6 @@
     <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">ประกาศให้ทั้งห้อง</button></div>
   </form>
 
-  <!-- ฟอร์มเพิ่มกิจกรรมห้อง -->
   <form class="modal-box box" id="actForm" autocomplete="off">
     <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
     <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
@@ -120,7 +112,6 @@
     <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึกกิจกรรม</button></div>
   </form>
 
-  <!-- ฟอร์มปฏิทินส่วนตัว -->
   <form class="modal-box box" id="eventForm" autocomplete="off">
     <h2>🗓️ NEW EVENT</h2>
     <label>ชื่อกิจกรรมส่วนตัว <input name="title" required placeholder="เช่น สอบย่อย"></label>
