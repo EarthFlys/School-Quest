@@ -667,7 +667,33 @@ function renderCalendar(){
     </div>`;
 }
 
-function renderAll(){ renderSide(); renderHome(); renderTimetable(); renderQuests(); renderActivities(); renderCalendar(); }
+const seenText = ds => {
+  if (!ds) return ["off", "ยังไม่เคยเข้า"];
+  const d = -daysLeft(ds);
+  return d <= 0 ? ["on", "เข้าวันนี้"] : d === 1 ? ["", "เมื่อวาน"] : ["", `${d} วันก่อน`];
+};
+
+function renderMembers(){
+  const rows = members.map(m => m.username === user ? { ...m, data: D, name: NAME } : m);
+  if (!rows.some(m => m.username === user)) rows.push({ username: user, name: NAME, data: D });
+  rows.sort((a, b) => (b.data?.lastDay || "").localeCompare(a.data?.lastDay || "") || (a.name || "").localeCompare(b.name || "", "th"));
+  const today = iso(new Date()), onToday = rows.filter(m => m.data?.lastDay === today).length;
+  const list = rows.map((m, i) => {
+    const dt = m.data || {}, [cls, txt] = seenText(dt.lastDay), lead = isLeaderName(m.username);
+    return `<div class="mem box pop ${m.username === user ? "me" : ""}" style="--i:${Math.min(i, 12)}">
+      <span class="mem-av">${esc(dt.avatar || "🙂")}<i class="dot ${cls}"></i></span>
+      <div class="mem-info"><b>${esc(m.name || m.username)}${lead ? " 👑" : ""}${m.username === user ? " (คุณ)" : ""}</b>
+        <small class="muted">@${esc(m.username)} · LV.${levelOf(dt.xp || 0)} · สำเร็จ ${dt.done || 0} เควส</small></div>
+      <span class="mem-seen ${cls}">${txt}</span></div>`;
+  }).join("");
+  PUT.members =
+    pageHead("👥", "สมาชิกห้อง", `${ROOM} · ทั้งหมด ${rows.length} คน · เข้าใช้วันนี้ ${onToday} คน`) +
+    (membersErr ? `<div class="alert box pop"><span class="c-icon">⚠️</span><div><b>โหลดรายชื่อไม่ครบ</b>
+      <div class="muted small">ตรวจสิทธิ์อ่านตาราง users ใน Supabase (รัน schema.sql) · ${esc(membersErr)}</div></div></div>` : "") +
+    `<div class="mem-list">${list}</div>`;
+}
+
+function renderAll(){ renderSide(); renderHome(); renderTimetable(); renderQuests(); renderActivities(); renderCalendar(); renderMembers(); }
 
 function showPage(p){
   page = p;

@@ -383,3 +383,16 @@ body{background-image:
 .lb-rank{width:30px;text-align:center;font-family:var(--px);font-size:12px}
 .lb-av{font-size:22px}
 .lb-gap{text-align:center;color:var(--muted);line-height:1}
+
+/* ===== สมาชิกห้อง ===== */
+.mem-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.mem{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.mem.me{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--panel))}
+.mem-av{position:relative;width:46px;height:46px;flex-shrink:0;display:grid;place-items:center;font-size:24px;background:var(--bg);border:2px solid var(--ink);border-radius:10px}
+.mem-av .dot{position:absolute;right:-5px;bottom:-5px;width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);background:var(--muted)}
+.mem-av .dot.on{background:var(--xp)}
+.mem-info{flex:1;min-width:0}
+.mem-info b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mem-seen{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.mem-seen.on{color:#15803d}
+[data-theme=dark] .mem-seen.on{color:#4ade80}
