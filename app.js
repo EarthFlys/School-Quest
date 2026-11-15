@@ -136,24 +136,32 @@ function syncToGoogleCalendar(title, due, details = ""){
 const newData = () => ({ hw:[], xp:0, coins:0, streak:0, lastDay:"", done:0, badges:[], avatar:"🐱", room:"ม.6/12", role:"student" });
 
 let user = null, NAME = "", ROOM = "ม.6/12", ROLE = "student", AVATAR = "🐱", D = null;
-let sharedQuests = [], classActivities = [], members = [], openQuests = new Set();
+let sharedQuests = [], classActivities = [], members = [], membersErr = "", openQuests = new Set();
 let page = "home", qFilter = "todo";
 let calY, calM, selDate = iso(new Date());
 let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
 
 async function loadClassData(){
+  const r = enc(ROOM);
   try {
-    const r = enc(ROOM);
-    const [quests, acts, mem] = await Promise.all([
+    const [quests, acts] = await Promise.all([
       sb(`shared_quests?room=eq.${r}&select=*`),
-      sb(`class_activities?room_target=eq.${r}&select=*`),
-      ROLE === "leader" ? sb(`users?room=eq.${r}&select=username,name,data`) : Promise.resolve([])
+      sb(`class_activities?room_target=eq.${r}&select=*`)
     ]);
     sharedQuests = quests || [];
     classActivities = acts || [];
-    members = (mem || []).sort((a, b) => (a.name || "").localeCompare(b.name || "", "th"));
   } catch (err) {
     console.error("โหลดข้อมูลห้องไม่สำเร็จ:", err);
+  }
+  if (ROLE !== "leader") return;
+  try {
+    const all = await sb("users?select=username,name,room,data");
+    members = (all || []).filter(m => normRoom(m.room) === ROOM)
+      .sort((a, b) => (a.name || "").localeCompare(b.name || "", "th"));
+    membersErr = "";
+  } catch (err) {
+    console.error("โหลดรายชื่อสมาชิกไม่สำเร็จ:", err);
+    membersErr = String(err.message || err).slice(0, 140);
   }
 }
 
@@ -357,17 +365,20 @@ function dueInfo(due, done){
 const memberChip = m => `<span class="chip">${esc(m.data?.avatar || "🙂")} ${esc(m.name || m.username)}</span>`;
 
 function progressBox(q){
-  if (ROLE !== "leader" || !members.length) return "";
+  if (ROLE !== "leader") return "";
+  if (membersErr) return `<div class="progress"><b>👥 โหลดรายชื่อสมาชิกไม่ได้</b>
+    <div class="muted small">ตรวจสิทธิ์อ่านตาราง users ใน Supabase (RLS) · ${esc(membersErr)}</div></div>`;
+  if (!members.length) return `<div class="progress"><b>👥 ยังไม่พบสมาชิกในห้อง ${esc(ROOM)}</b></div>`;
   const dn = members.filter(m => memberDone(m, q.id)), pd = members.filter(m => !memberDone(m, q.id));
   const pct = Math.round(dn.length / members.length * 100), open = openQuests.has(q.id);
-  return `<div class="progress">
+  return `<div class="progress ${open ? "open" : ""}">
     <div class="progress-top"><b>👥 ทำเสร็จแล้ว ${dn.length}/${members.length} คน (${pct}%)</b>
-      <button class="btn sm" data-act="who" data-id="${q.id}">${open ? "ซ่อนรายชื่อ" : "ดูรายชื่อ"}</button></div>
+      <button type="button" class="btn sm" data-act="who" data-id="${q.id}">${open ? "ซ่อนรายชื่อ" : "ดูรายชื่อ"}</button></div>
     <div class="xpbar thin"><div style="width:${pct}%"></div></div>
-    ${open ? `<div class="who">
+    <div class="who">
       <div class="ok"><h4>✅ เสร็จแล้ว (${dn.length})</h4>${dn.map(memberChip).join("") || `<small class="muted">ยังไม่มีใครส่ง</small>`}</div>
       <div><h4>⏳ ยังไม่เสร็จ (${pd.length})</h4>${pd.map(memberChip).join("") || `<small class="muted">เสร็จครบทุกคนแล้ว 🎉</small>`}</div>
-    </div>` : ""}</div>`;
+    </div></div>`;
 }
 
 function sharedQuestItem(q, i = 0){
@@ -676,7 +687,12 @@ document.addEventListener("click", async e => {
     case "close":     closeModal(); break;
     case "filter":    qFilter = t.dataset.f; sfx(); renderQuests(); break;
     case "toggle-shared": toggleSharedQuest(id || t.closest("[data-id]")?.dataset.id, t); break;
-    case "who": openQuests.has(id) ? openQuests.delete(id) : openQuests.add(id); sfx(); renderQuests(); break;
+    case "who": {
+      const box = t.closest(".progress"); if (!box) break;
+      const open = box.classList.toggle("open");
+      open ? openQuests.add(id) : openQuests.delete(id);
+      t.textContent = open ? "ซ่อนรายชื่อ" : "ดูรายชื่อ"; sfx(); break;
+    }
     case "sync-cal":  syncToGoogleCalendar(t.dataset.title, t.dataset.due, t.dataset.note); break;
     case "tt-day":    selectedTimetableDay = +t.dataset.day; sfx(); renderTimetable(); break;
     case "del-shared":
@@ -715,7 +731,7 @@ const n0 = new Date(); calY = n0.getFullYear(); calM = n0.getMonth();
 fillTeachers();
 const session = localStorage.getItem("ms_session");
 session ? startApp(session) : showAuth();
-const classSig = () => JSON.stringify([sharedQuests, classActivities,
+const classSig = () => JSON.stringify([sharedQuests, classActivities, membersErr,
   members.map(m => [m.username, (m.data?.hw || []).filter(h => h.done).length])]);
 setInterval(async () => {
   if (!user || document.hidden || $("#modal").classList.contains("open")) return;

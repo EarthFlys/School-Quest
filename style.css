@@ -347,7 +347,7 @@ body{background-image:
 
 .progress{margin-top:14px;padding-top:12px;border-top:2px dashed var(--line)}
 .progress-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
-.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:14px}
+.who{display:none;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:14px}
 .who h4{font-size:13px;margin-bottom:8px}
 .chip{display:inline-flex;align-items:center;gap:4px;margin:0 6px 6px 0;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid var(--line);background:var(--bg)}
 .who .ok .chip{background:color-mix(in srgb,var(--xp) 18%,var(--panel));border-color:color-mix(in srgb,var(--xp) 55%,transparent)}
@@ -365,3 +365,6 @@ body{background-image:
   .modal-box .row{flex-direction:column}
   .page-head{flex-wrap:wrap}
 }
+
+.progress.open .who{display:grid}
+.progress-top .btn{position:relative;z-index:2}
