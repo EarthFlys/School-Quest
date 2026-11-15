@@ -291,4 +291,15 @@ input:focus,select:focus,textarea:focus{transform:translate(-1px,-1px); box-shad
   .main{padding:24px 16px 110px}
   .quest-actions .btn{padding:6px 10px;font-size:12px}
   .reward{display:none}
+  /* ซ่อนปุ่มกากบาทเคลียร์ข้อความของเบราว์เซอร์ */
+input::-ms-clear,
+input::-ms-reveal {
+  display: none;
+}
+input::-webkit-search-decoration,
+input::-webkit-search-cancel-button,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none;
+}
 }
