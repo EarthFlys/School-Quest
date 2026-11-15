@@ -1,6 +1,6 @@
 // ===================== 0) ตั้งค่า SUPABASE & หัวหน้าห้อง =====================
 const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
-const SUPABASE_KEY = "sb_publishable_0wNEgBPE9JCxeV1Rg1M1GA_Gde0FHpt";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtaXVubW90bWJud3N3c3Buemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg2MjYsImV4cCI6MjA1NjgxNDYyNn0.YourActualKeyHere"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
 
 // 👑 ตั้งค่ารายชื่อบัญชีหัวหน้าห้อง (เพิ่มชื่อและรหัสผ่านได้หลายคน)
 const LEADERS = {
@@ -8,7 +8,6 @@ const LEADERS = {
   "earthflyszx_": "earthzaza",
   "อีกคนก็ได้": "รหัสลับของเขา"
 };
-
 
 async function sb(endpoint, method = "GET", body = null, headers = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
@@ -194,10 +193,9 @@ $("#authForm").onsubmit = async e => {
   const fail = msg => { $("#authMsg").textContent = msg; box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); };
   
   try {
-    // 🔒 ระบบล็อกหัวหน้าห้องอัตโนมัติด้วยรหัสลับ
     let assignedRole = "student";
-    if (username === LEADER_USERNAME) {
-      if (pw !== LEADER_SECRET_PASS) return fail("รหัสผ่านหัวหน้าห้องไม่ถูกต้อง!");
+    if (LEADERS[username]) {
+      if (pw !== LEADERS[username]) return fail("รหัสผ่านหัวหน้าห้องไม่ถูกต้อง!");
       assignedRole = "leader";
     }
 
@@ -220,8 +218,7 @@ $("#authForm").onsubmit = async e => {
       const hashed = await hash(pw, u.salt);
       if (hashed !== u.hash) return fail("รหัสผ่านไม่ถูกต้อง");
 
-      // อัปเดตสถานะหัวหน้าให้ตรงกันเสมอถ้าใช้ชื่อนี้
-      if (username === LEADER_USERNAME && u.role !== "leader") {
+      if (LEADERS[username] && u.role !== "leader") {
         assignedRole = "leader";
         await sb(`users?username=eq.${username}`, "PATCH", { role: "leader" });
       } else {
@@ -244,8 +241,7 @@ async function startApp(username){
     const u = res[0];
     user = u.username; NAME = u.name; ROOM = u.room || "ม.6/12"; ROLE = u.role || "student";
     
-    // บังคับเช็คอีกรอบเพื่อความชัวร์
-    if (username === LEADER_USERNAME) ROLE = "leader";
+    if (LEADERS[username]) ROLE = "leader";
 
     D = Object.assign(newData(), u.data);
     AVATAR = D.avatar || "🐱";
