@@ -78,49 +78,58 @@
   </main>
 </div>
 
-<!-- ========== หน้าต่างเพิ่มเควส / กิจกรรม ========== -->
 <div class="modal" id="modal">
-  <div class="modal-backdrop" data-act="close"></div>
-  
-  <form class="modal-box box" id="questForm" autocomplete="off">
-    <h2 id="qHead">⚔️ มอบหมายเควสให้ห้อง</h2>
-    <label>ชื่องาน / เควส <input name="title" required placeholder="เช่น การบ้านฟิสิกส์ หน้า 45"></label>
-    <div class="row">
-      <label>คุณครูผู้สอน <select name="teacher" id="teacherSelect"></select></label>
-      <label>ประเภท <select name="type"><option>การบ้าน</option><option>งาน/โปรเจกต์</option><option>อ่านสอบ</option></select></label>
-    </div>
-    <div class="row">
-      <label>กำหนดส่ง <input name="due" type="date" required></label>
-      <label>ความยาก <select name="diff">
-        <option value="easy">⭐ ง่าย (+10 XP)</option>
-        <option value="normal" selected>⭐⭐ ปานกลาง (+20 XP)</option>
-        <option value="hard">⭐⭐⭐ ยาก (+40 XP)</option>
-      </select></label>
-    </div>
-    <label>รายละเอียดเพิ่มเติม <textarea name="note" rows="2" placeholder="เช่น ทำข้อคู่ทั้งหมด ส่งในคาบ"></textarea></label>
-    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">ประกาศให้ทั้งห้อง</button></div>
-  </form>
+  <div class="modal-content box">
+    <button class="close-btn" data-act="close">✕</button>
+    
+    <!-- ฟอร์มเพิ่มเควส (สำหรับหัวหน้า) -->
+    <form class="modal-box box" id="questForm" autocomplete="off" style="display:none">
+      <h2>⚔️ มอบหมายเควสให้ห้อง</h2>
+      <label>ชื่อเควส / การบ้าน <input name="title" required placeholder="เช่น ทำแบบฝึกหัด หน้า 50"></label>
+      <div class="row">
+        <label>คุณครู <select name="teacher" id="teacherSelect"></select></label>
+        <label>ประเภท 
+          <select name="type">
+            <option value="การบ้าน">การบ้าน</option>
+            <option value="งานกลุ่ม">งานกลุ่ม</option>
+            <option value="สอบย่อย">สอบย่อย</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label>กำหนดส่ง <input name="due" type="date" required></label>
+        <label>ระดับความยาก 
+          <select name="diff">
+            <option value="easy">⭐ ง่าย (+10 XP)</option>
+            <option value="normal" selected>⭐⭐ ปานกลาง (+20 XP)</option>
+            <option value="hard">⭐⭐⭐ ยาก (+40 XP)</option>
+          </select>
+        </label>
+      </div>
+      <label>รายละเอียดเพิ่มเติม <textarea name="note" rows="2" placeholder="เช่น ทำข้อคู่ทั้งหมด ส่งในคาบ"></textarea></label>
+      <div class="row">
+        <button type="button" class="btn" data-act="close">ยกเลิก</button>
+        <button type="button" class="btn primary" onclick="document.getElementById('questForm').requestSubmit()">ประกาศให้ทั้งห้อง</button>
+      </div>
+    </form>
 
-  <form class="modal-box box" id="actForm" autocomplete="off">
-    <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
-    <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
-    <div class="row">
-      <label>วันที่จัด <input name="date" type="date" required></label>
-      <label>ผู้รับผิดชอบ <input name="assignee" placeholder="เช่น เวรทำความสะอาดกลุ่ม 1"></label>
-    </div>
-    <label>รายละเอียด <textarea name="description" rows="2" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea></label>
-    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึกกิจกรรม</button></div>
-  </form>
+    <!-- ฟอร์มเพิ่มกิจกรรมห้อง -->
+    <form class="modal-box box" id="actForm" autocomplete="off" style="display:none">
+      <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
+      <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
+      <div class="row">
+        <label>วันที่จัด <input name="date" type="date" required></label>
+        <label>ผู้รับผิดชอบ <input name="assignee" placeholder="เช่น เวรทำความสะอาดกลุ่ม 1"></label>
+      </div>
+      <label>รายละเอียด <textarea name="description" rows="2" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea></label>
+      <div class="row">
+        <button type="button" class="btn" data-act="close">ยกเลิก</button>
+        <button type="button" class="btn primary" onclick="document.getElementById('actForm').requestSubmit()">บันทึกกิจกรรม</button>
+      </div>
+    </form>
 
-  <form class="modal-box box" id="eventForm" autocomplete="off">
-    <h2>🗓️ NEW EVENT</h2>
-    <label>ชื่อกิจกรรมส่วนตัว <input name="title" required placeholder="เช่น สอบย่อย"></label>
-    <div class="row">
-      <label>ประเภท <select name="type" id="eventType"></select></label>
-      <label>วันที่ <input name="date" type="date" required></label>
-    </div>
-    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึก</button></div>
-  </form>
+  </div>
 </div>
 
 <div class="levelup" id="levelup"><div id="luText">LEVEL UP!</div></div>

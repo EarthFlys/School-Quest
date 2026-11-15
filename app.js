@@ -1,6 +1,6 @@
 // ===================== 0) ตั้งค่า SUPABASE & หัวหน้าห้อง =====================
 const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtaXVubW90bWJuc3N3c3Buemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjY0MDMsImV4cCI6MjA5MjcwMjQwM30.euitW1by8xkBnH3YtTOf2v6gWazVJLebyPDXF_COOYM"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtaXVubW90bWJud3N3c3Buemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg2MjYsImV4cCI6MjA1NjgxNDYyNn0.YourActualKeyHere"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
 
 // 👑 ตั้งค่ารายชื่อบัญชีหัวหน้าห้อง (เพิ่มชื่อและรหัสผ่านได้หลายคน)
 const LEADERS = {
@@ -562,8 +562,24 @@ function fillTeachers(){
   $("#teacherSelect").innerHTML = teachers.map(t => `<option>${t}</option>`).join("") + `<option>คุณครูท่านอื่น</option>`;
 }
 
-function openModal(kind){ const m = $("#modal"); m.dataset.form = kind; m.classList.add("open"); }
-function closeModal(){ $("#modal").classList.remove("open"); }
+function openModal(kind){ 
+  const m = $("#modal"); 
+  m.dataset.form = kind; 
+  m.classList.add("open");
+  const qForm = $("#questForm");
+  const aForm = $("#actForm");
+  if (qForm) qForm.style.display = kind === "quest" ? "block" : "none";
+  if (aForm) aForm.style.display = kind === "act" ? "block" : "none";
+}
+
+function closeModal(){ 
+  const m = $("#modal");
+  m.classList.remove("open"); 
+  const qForm = $("#questForm");
+  const aForm = $("#actForm");
+  if (qForm) qForm.style.display = "none";
+  if (aForm) aForm.style.display = "none";
+}
 
 $("#questForm").onsubmit = async e => {
   e.preventDefault();
