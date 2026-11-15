@@ -293,7 +293,7 @@ async function startApp(username){
     
     await loadClassData(); await loadBooks();
     $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
-    dailyCheck(); renderAll(); showPage("home"); maybeNotify();
+    dailyCheck(); renderAll(); showPage("home"); maybeNotify(); enablePush(true);
   } catch (err) {
     console.error(err);
     showAuth();
@@ -474,6 +474,23 @@ async function enableNotify(){
   const p = await Notification.requestPermission();
   if (p === "granted"){ localStorage.setItem("ms_notify", "1"); toast("🔔 เปิดแจ้งเตือนงานใกล้ส่งแล้ว"); maybeNotify(true); }
   else toast("ไม่ได้รับอนุญาตให้แจ้งเตือน");
+}
+const VAPID_PUBLIC = "BMqlPy4naqsF2whXPaQPzpkdUG3nw6WThvCW6b0yLoN91n5WRvJSjmjkMEU21c-phYF8nEEm-A_YP6iy5uUGt4Q";
+const b64u = v => { const r = atob((v + "=".repeat((4 - v.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, c => c.charCodeAt(0)); };
+async function enablePush(silent = false){
+  const ok = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  if (silent && (!ok || Notification.permission !== "granted" || !localStorage.getItem("ms_push"))) return;
+  if (!ok) return toast("เครื่องนี้ยังไม่รองรับ · iPhone ต้องกด แชร์ → เพิ่มลงหน้าจอโฮม แล้วเปิดจากไอคอน", 6000);
+  if (!/^B[\w-]{60,}$/.test(VAPID_PUBLIC)) return toast("ยังไม่ได้ใส่ VAPID_PUBLIC ใน app.js", 4000);
+  try {
+    if (!silent && await Notification.requestPermission() !== "granted") return toast("ไม่ได้รับอนุญาตให้แจ้งเตือน");
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID_PUBLIC) });
+    const j = sub.toJSON();
+    await sb("push_subscriptions", "POST", { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, username: user, room: ROOM });
+    localStorage.setItem("ms_push", "1");
+    if (!silent) toast("🔔 เปิดแจ้งเตือนเข้าโทรศัพท์แล้ว · จะเตือนทุกเช้า");
+  } catch (err) { console.error(err); if (!silent) toast("⚠️ เปิดแจ้งเตือนไม่สำเร็จ: " + friendlyErr(err, "push_subscriptions"), 5000); }
 }
 function maybeNotify(force){
   try {
@@ -978,7 +995,7 @@ document.addEventListener("click", async e => {
       copyText(`⏳ ยังไม่ส่ง «${q.title}» (${pd.length} คน)\n` + (pd.map(m => m.name || m.username).join(", ") || "ส่งครบแล้ว 🎉"));
       break;
     }
-    case "notify": enableNotify(); break;
+    case "notify": enablePush(); break;
     case "who": {
       const box = t.closest(".progress"); if (!box) break;
       const open = box.classList.toggle("open");
@@ -1027,6 +1044,7 @@ document.documentElement.dataset.theme = localStorage.getItem("ms_theme")
   || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 const n0 = new Date(); calY = n0.getFullYear(); calM = n0.getMonth();
 fillTeachers();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 $("#subjectList").innerHTML = Object.values(GROUPS).map(g => `<option value="${g.name}">`).join("");
 const session = localStorage.getItem("ms_session");
 session ? startApp(session) : showAuth();
