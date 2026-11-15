@@ -899,7 +899,7 @@ $("#actForm").onsubmit = async e => {
   if (saving || ROLE !== "leader") return;
   const f = e.target.elements, editId = f["id"].value;
   const data = { title: f["title"].value.trim(), description: f["description"].value.trim(),
-    date: f["date"].value, room_target: ROOM, assignee: f["assignee"].value.trim() };
+    date: f["date"].value, room: ROOM, room_target: ROOM, assignee: f["assignee"].value.trim() };
   const end = f["end_date"].value;
   if (!data.title) return toast("⚠️ ใส่ชื่อกิจกรรมก่อน");
   if (!data.date) return toast("⚠️ เลือกวันที่เริ่มก่อน");
