@@ -1,8 +1,7 @@
-// ===================== 0) ตั้งค่า SUPABASE (ใส่ค่าของคุณตรงนี้) =====================
+// ===================== 0) ตั้งค่า SUPABASE =====================
 const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_0wNEgBPE9JCxeV1Rg1M1GA_Gde0FHpt";
 
-// ฟังก์ชันกลางสำหรับคุยกับ Supabase
 async function sb(endpoint, method = "GET", body = null, headers = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
     method,
@@ -20,7 +19,7 @@ async function sb(endpoint, method = "GET", body = null, headers = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-// ===================== 1) ตารางเรียน ม.6/12 ภาคเรียนที่ 2/2569 =====================
+// ===================== 1) ตารางเรียน ม.6/12 =====================
 const PERIODS = [
   ["08:40","09:30"],["09:30","10:20"],["10:20","11:10"],["11:10","12:00"],["12:00","12:50"],
   ["12:50","13:40"],["13:40","14:30"],["14:30","15:20"],["15:20","16:10"],["16:10","17:00"]
@@ -31,7 +30,7 @@ const A = (name, room = "") => ({ name, room, activity: true });
 
 const SCHEDULE = {
   1: [S("ว33202","ครูถนอมศักดิ์","127"), S("ว33202","ครูถนอมศักดิ์","127"), S("ค33202","ครูประยูร","621"),
-      S("พ33202","ครูอนุชิต","สนามลีลาศ"), null, S("ค33102","ครูฉัตรชาวา","622"), S("ท33102","ครูสุกัญญา","328"),
+      S("พ33202","ครูอนุชิต","สนามลีลาศ"), null, S("ค33102","ครูฉัชวา","622"), S("ท33102","ครูสุกัญญา","328"),
       S("อ33102","ครูนงลักษณ์","224"), S("ส33204","ครูที่ปรึกษา",""), null],
   2: [S("ว30296","ครูธนพร","425/1"), S("ว30296","ครูธนพร","425/1"), S("ว30296","ครูธนพร","425/1"),
       A("ห้องสมุด"), null, S("ว33242","ครูสุปรัชญา","112"), S("ค33202","ครูประยูร","621"),
@@ -42,7 +41,7 @@ const SCHEDULE = {
   4: [S("ว30298","ครูสมปรารถนา","438"), S("ว30298","ครูสมปรารถนา","438"), S("ว33242","ครูสุปรัชญา","112"),
       S("ว33242","ครูสุปรัชญา","112"), null, S("พ33102","ครูสุวัฒชัย","545"), A("อิสระ"),
       S("ส33102","ครูอานนท์","538"), null, null],
-  5: [S("ก33902","ครูสุพรรณี","217"), S("ส33102","ครูอานนท์","538"), S("ค33102","ครูฉัตรชาวา","622"),
+  5: [S("ก33902","ครูสุพรรณี","217"), S("ส33102","ครูอานนท์","538"), S("ค33102","ครูฉัชวา","622"),
       A("อิสระ"), null, S("ค33202","ครูประยูร","621"), S("ว33101","ครูศุภรดา","123"),
       S("ศ33102","ครูธัญพิมล","ช201"), null, null],
 };
@@ -62,8 +61,8 @@ const DIFF = { easy:{xp:10,icon:"⭐"}, normal:{xp:20,icon:"⭐⭐"}, hard:{xp:4
 const PETS = ["🥚","🐣","🐥","🐤","🐔","🦅","🐉"];
 const TITLES = ["มือใหม่","นักเรียนฝึกหัด","นักผจญภัย","อัศวินการบ้าน","จอมเวทย์ความรู้","ปรมาจารย์","ตำนานห้องเรียน"];
 const QUOTES = [
-  "วันนี้จะเป็นวันที่ดี สู้ๆ นะ!", "อย่าลืมเคลียร์เควสก่อนไปนอนล่ะ 🎮",
-  "เลเวลอัพอยู่ไม่ไกล ลุยเลย!", "พักได้ แต่อย่ายอมแพ้!", "ระบบซิงค์ข้อมูลออนไลน์เรียบร้อย ✨"
+  "หัวหน้าห้องประกาศงานใหม่แล้ว เช็กกันด้วยนะ!", "สามัคคีคือพลัง เคลียร์เควสให้ไว!",
+  "เลเวลอัพอยู่ไม่ไกล ลุยเลย!", "ห้องเราต้องที่ 1!", "ข้อมูลซิงค์กับเพื่อนๆ ทุกคนในห้องแล้ว ✨"
 ];
 const EV = { "สอบ":{icon:"📝",color:"#ef4444"}, "กิจกรรม":{icon:"🎪",color:"#a855f7"}, "วันหยุด":{icon:"🏖️",color:"#22c55e"}, "อื่นๆ":{icon:"📌",color:"#64748b"} };
 const levelOf = xp => Math.floor(xp / 100) + 1;
@@ -72,8 +71,6 @@ const BADGES = [
   { id:"first", icon:"🗡️", name:"เควสแรก", desc:"ทำเควสสำเร็จ 1 ครั้ง", test:d => d.done >= 1 },
   { id:"five", icon:"🛡️", name:"นักล่าเควส", desc:"สำเร็จ 5 เควส", test:d => d.done >= 5 },
   { id:"twenty", icon:"👑", name:"ราชาการบ้าน", desc:"สำเร็จ 20 เควส", test:d => d.done >= 20 },
-  { id:"streak3", icon:"🔥", name:"ไฟลุก", desc:"เข้าต่อเนื่อง 3 วัน", test:d => d.streak >= 3 },
-  { id:"lv5", icon:"💎", name:"เลเวล 5", desc:"ไปถึงเลเวล 5", test:d => levelOf(d.xp) >= 5 },
 ];
 
 const $ = s => document.querySelector(s), qsa = s => Array.from(document.querySelectorAll(s));
@@ -125,13 +122,27 @@ function syncToGoogleCalendar(title, due, details = ""){
   window.open(url, "_blank");
 }
 
-// ===================== 3) จัดการผู้ใช้ผ่าน Supabase =====================
-const newData = () => ({ hw:[], events:[], xp:0, coins:0, streak:0, lastDay:"", done:0, badges:[], avatar:"🐱", room:"ม.6/12" });
+// ===================== 3) จัดการผู้ใช้ & ข้อมูลห้องเรียน =====================
+const newData = () => ({ hw:[], xp:0, coins:0, streak:0, lastDay:"", done:0, badges:[], avatar:"🐱", room:"ม.6/12", role:"student" });
 
-let user = null, NAME = "", ROOM = "ม.6/12", AVATAR = "🐱", D = null;
-let page = "home", qFilter = "todo", editingId = null;
+let user = null, NAME = "", ROOM = "ม.6/12", ROLE = "student", AVATAR = "🐱", D = null;
+let sharedQuests = [], classActivities = [];
+let page = "home", qFilter = "todo";
 let calY, calM, selDate = iso(new Date());
 let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
+
+async function loadClassData(){
+  try {
+    const [quests, acts] = await Promise.all([
+      sb(`shared_quests?room=eq.${ROOM}&select=*`),
+      sb(`class_activities?room_target=eq.${ROOM}&select=*`)
+    ]);
+    sharedQuests = quests || [];
+    classActivities = acts || [];
+  } catch (err) {
+    console.error("โหลดข้อมูลห้องไม่สำเร็จ:", err);
+  }
+}
 
 async function persist(){
   if (!user) return;
@@ -141,8 +152,11 @@ async function persist(){
     console.error("ซิงค์ข้อมูลไม่สำเร็จ:", err);
   }
 }
-function commit(){ persist(); renderAll(); }
-const pending = () => D.hw.filter(h => !h.done).sort((a, b) => a.due.localeCompare(b.due));
+async function commit(){ await persist(); await loadClassData(); renderAll(); }
+
+// เช็คว่าเควสห้องนี้ ติ๊กเสร็จส่วนตัวหรือยัง
+const isQuestDone = id => D.hw.some(h => h.id === id && h.done);
+const pendingShared = () => sharedQuests.filter(q => !isQuestDone(q.id)).sort((a,b) => a.due.localeCompare(b.due));
 
 async function hash(pw, salt){
   if (!crypto.subtle) return btoa(unescape(encodeURIComponent(salt + pw)));
@@ -174,17 +188,17 @@ $("#authForm").onsubmit = async e => {
   
   try {
     if (authMode === "register"){
-      const name = f["name"].value.trim(), room = f["room"].value.trim() || "ม.6/12";
+      const name = f["name"].value.trim(), room = f["room"].value.trim() || "ม.6/12", role = f["role"].value;
       if (!name) return fail("กรุณาใส่ชื่อที่ให้เรียก");
       
       const check = await sb(`users?username=eq.${username}&select=username`);
       if (check && check.length > 0) return fail("ชื่อผู้ใช้นี้มีคนใช้แล้ว");
 
       const salt = uid(), dat = newData();
-      dat.avatar = selectedAvatar; dat.room = room;
+      dat.avatar = selectedAvatar; dat.room = room; dat.role = role;
       const hashed = await hash(pw, salt);
 
-      await sb("users", "POST", { username, name, room, salt, hash: hashed, data: dat });
+      await sb("users", "POST", { username, name, room, role, salt, hash: hashed, data: dat });
     } else {
       const res = await sb(`users?username=eq.${username}&select=*`);
       if (!res || res.length === 0) return fail("ไม่พบชื่อผู้ใช้นี้");
@@ -196,7 +210,7 @@ $("#authForm").onsubmit = async e => {
     e.target.reset(); sfx("level");
     startApp(username);
   } catch (err) {
-    fail("เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาเช็กเน็ตหรือการตั้งค่า Supabase");
+    fail("เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาเช็กเน็ต");
     console.error(err);
   }
 };
@@ -206,10 +220,11 @@ async function startApp(username){
     const res = await sb(`users?username=eq.${username}&select=*`);
     if (!res || res.length === 0) return showAuth();
     const u = res[0];
-    user = u.username; NAME = u.name; ROOM = u.room || "ม.6/12";
+    user = u.username; NAME = u.name; ROOM = u.room || "ม.6/12"; ROLE = u.role || "student";
     D = Object.assign(newData(), u.data);
     AVATAR = D.avatar || "🐱";
     
+    await loadClassData();
     $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
     dailyCheck(); renderAll(); showPage("home");
   } catch (err) {
@@ -252,24 +267,25 @@ function checkBadges(){
   });
 }
 
-function toggleQuest(h, btn){
-  if (!h) return;
+function toggleSharedQuest(qId, btn){
+  let h = D.hw.find(x => x.id === qId);
+  if (!h){
+    h = { id: qId, done: false };
+    D.hw.push(h);
+  }
   h.done = !h.done;
+  const sq = sharedQuests.find(x => x.id === qId);
   if (h.done){
-    const late = daysLeft(h.due) < 0, base = DIFF[h.diff || "normal"].xp;
-    h.xpGot = late ? Math.ceil(base / 2) : base;
-    h.coinGot = late ? 2 : 5;
-    D.done++; D.coins += h.coinGot;
+    const dif = DIFF[sq?.diff || "normal"];
+    D.done++; D.coins += 5;
     const r = btn.getBoundingClientRect();
     confetti(r.left + r.width / 2, r.top + r.height / 2);
     sfx("coin"); navigator.vibrate?.(20);
-    toast(`${late ? "⏰ ส่งช้า" : "🎉 เควสสำเร็จ"} +${h.xpGot} XP · +${h.coinGot} 🪙`);
-    gainXP(h.xpGot);
+    toast(`🎉 ทำเควสสำเร็จ! +${dif.xp} XP · +5 🪙`);
+    gainXP(dif.xp);
   } else {
     D.done = Math.max(0, D.done - 1);
-    D.coins = Math.max(0, D.coins - (h.coinGot || 0));
-    D.xp = Math.max(0, D.xp - (h.xpGot || 0));
-    h.xpGot = h.coinGot = 0;
+    D.coins = Math.max(0, D.coins - 5);
   }
   checkBadges(); commit();
 }
@@ -284,36 +300,38 @@ const callout = (icon, title, sub = "", pct = null) => `
   <div class="callout box pop"><span class="c-icon">${icon}</span><div><b>${esc(title)}</b>
   <div class="muted">${esc(sub)}</div>${pct !== null ? `<div class="xpbar thin"><div style="width:${pct}%"></div></div>` : ""}</div></div>`;
 
-function dueInfo(h){
-  if (h.done) return ["", "✔ สำเร็จ"];
-  const d = daysLeft(h.due);
+function dueInfo(due, done){
+  if (done) return ["", "✔ สำเร็จ"];
+  const d = daysLeft(due);
   if (d < 0) return ["late", `เลยกำหนด ${-d} วัน`];
   if (d === 0) return ["soon", "ส่งวันนี้!"];
   if (d === 1) return ["soon", "ส่งพรุ่งนี้"];
   return ["", `อีก ${d} วัน`];
 }
 
-function questItem(h, i = 0){
-  const [cls, txt] = dueInfo(h), dif = DIFF[h.diff || "normal"];
-  return `<div class="quest box pop ${h.done ? "done" : ""}" data-id="${h.id}" style="--c:#5856d6;--i:${i}">
-    <button class="check" data-act="toggle" aria-label="สำเร็จ">${h.done ? "✔" : ""}</button>
-    <div class="q-info" data-act="edit">
-      <div class="q-title">${esc(h.title)}</div>
-      ${h.note ? `<div class="muted small">${esc(h.note)}</div>` : ""}
-      <div class="tags"><span class="tag">👨‍🏫 ${esc(h.teacher)}</span>
-        <span class="tag gray">${esc(h.type)}</span>
-        <span class="tag ${cls}">📅 ${fmtShort(h.due)} · ${txt}</span></div>
+function sharedQuestItem(q, i = 0){
+  const done = isQuestDone(q.id);
+  const [cls, txt] = dueInfo(q.due, done), dif = DIFF[q.diff || "normal"];
+  return `<div class="quest box pop ${done ? "done" : ""}" data-id="${q.id}" style="--c:#5856d6;--i:${i}">
+    <button class="check" data-act="toggle-shared" aria-label="สำเร็จ">${done ? "✔" : ""}</button>
+    <div class="q-info">
+      <div class="q-title">${esc(q.title)}</div>
+      ${q.note ? `<div class="muted small">${esc(q.note)}</div>` : ""}
+      <div class="tags"><span class="tag">👨‍🏫 ${esc(q.teacher)}</span>
+        <span class="tag gray">${esc(q.type)}</span>
+        <span class="tag ${cls}">📅 ${fmtShort(q.due)} · ${txt}</span>
+        <span class="tag" style="--c:#f59e0b">👑 หัวหน้าสั่ง</span></div>
     </div>
     <div class="quest-actions">
-      <button class="btn sm" data-act="sync-cal" data-id="${h.id}" title="ซิงค์ไป Google Calendar">🗓️ ซิงค์</button>
+      <button class="btn sm" data-act="sync-cal" data-title="${esc(q.title)}" data-due="${q.due}" data-note="${esc(q.note || '')}" title="ซิงค์ไป Google Calendar">🗓️ ซิงค์</button>
       <div class="reward">+${dif.xp}XP</div>
     </div>
-    <button class="del" data-act="del" aria-label="ลบ">✕</button></div>`;
+    ${ROLE === 'leader' ? `<button class="del" data-act="del-shared" data-id="${q.id}" title="ลบเควส">✕</button>` : ""}</div>`;
 }
 
 function nowCard(){
   const d = new Date().getDay(), arr = SCHEDULE[d], m = nowMin();
-  if (!arr) return callout("🏖️", "วันนี้วันหยุด!", "พักผ่อนให้เต็มที่ แล้วค่อยมาลุยเควส");
+  if (!arr) return callout("🏖️", "วันนี้วันหยุด!", "พักผ่อนให้เต็มที่ แล้วค่อยมาลุยเควสห้องเรียน");
   const cur = PERIODS.findIndex(([a, b]) => m >= toMin(a) && m < toMin(b));
   if (cur === LUNCH) return callout("🍱", "พักกลางวัน", "เติมพลังให้เต็มหลอด!");
   if (cur >= 0 && arr[cur]){
@@ -325,22 +343,22 @@ function nowCard(){
     const s = arr[nx];
     return callout("⏭️", `คาบถัดไป: ${label(s)}`, `${PERIODS[nx][0]} น. · ${metaOf(s)} · อีก ${toMin(PERIODS[nx][0]) - m} นาที`);
   }
-  return callout("🎉", "เลิกเรียนแล้ว!", "ได้เวลาไปเคลียร์เควสการบ้านกันแล้ว");
+  return callout("🎉", "เลิกเรียนแล้ว!", "ได้เวลาไปเคลียร์เควสห้องเรียนกันแล้ว");
 }
 
 function renderSide(){
   const lv = levelOf(D.xp);
   $("#avatarDisplay").textContent = AVATAR;
-  $("#sideName").textContent = NAME;
+  $("#sideName").textContent = NAME + (ROLE === 'leader' ? ' 👑' : '');
   $("#sideRoom").textContent = ROOM;
-  $("#badge").textContent = pending().length || "";
+  $("#badge").textContent = pendingShared().length || "";
 }
 
 function renderHome(){
   const lv = levelOf(D.xp), prog = D.xp % 100, hr = new Date().getHours();
   const greet = hr < 12 ? "อรุณสวัสดิ์" : hr < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
   const randomQuote = QUOTES[Math.floor(Math.abs(Math.sin(D.xp + D.coins)) * QUOTES.length)];
-  const pend = pending();
+  const pend = pendingShared();
   
   $("#page-home").innerHTML =
     pageHead("👋", `${greet}, ${esc(NAME)}!`, `💬 "${randomQuote}"`,
@@ -360,8 +378,8 @@ function renderHome(){
       </div>
     </div>` +
     nowCard() +
-    `<h3 class="h3">⚔️ เควสที่ใกล้ถึงกำหนด</h3>` +
-    (pend.length ? pend.slice(0, 3).map(questItem).join("") : empty("✨", "ไม่มีเควสค้าง เยี่ยมมาก!")) +
+    `<h3 class="h3">⚔️ เควสห้องเรียนที่ต้องเคลียร์</h3>` +
+    (pend.length ? pend.slice(0, 3).map(sharedQuestItem).join("") : empty("✨", "ไม่มีเควสค้าง เยี่ยมมาก!")) +
     `<h3 class="h3">🏆 ความสำเร็จ (${D.badges.length}/${BADGES.length})</h3>
      <div class="badges">${BADGES.map((b, i) => `<div class="badge box pop ${D.badges.includes(b.id) ? "" : "locked"}" style="--i:${i}" title="${b.desc}">
        <span>${b.icon}</span><small><b>${b.name}</b></small><small class="muted">${b.desc}</small></div>`).join("")}</div>`;
@@ -426,25 +444,46 @@ function renderTimetable(){
 }
 
 function renderQuests(){
-  const list = qFilter === "todo" ? pending()
-    : qFilter === "done" ? D.hw.filter(h => h.done)
-    : [...D.hw].sort((a, b) => a.due.localeCompare(b.due));
-  const segs = [["todo","ค้างอยู่"],["done","สำเร็จ"],["all","ทั้งหมด"]]
+  const list = qFilter === "todo" ? pendingShared()
+    : qFilter === "done" ? sharedQuests.filter(q => isQuestDone(q.id))
+    : [...sharedQuests].sort((a, b) => a.due.localeCompare(b.due));
+  
+  const segs = [["todo","ค้างอยู่"],["done","สำเร็จแล้ว"],["all","ทั้งหมด"]]
     .map(([k, t]) => `<button data-act="filter" data-f="${k}" class="${qFilter === k ? "active" : ""}">${t}</button>`).join("");
+  
   $("#page-quests").innerHTML =
-    pageHead("⚔️", "กระดานเควส", `ค้างอยู่ ${pending().length} · สำเร็จแล้ว ${D.done} เควส`) +
+    pageHead("⚔️", "เควสห้องเรียน", `สมาชิกห้อง ${ROOM} เห็นงานชุดเดียวกันทั้งหมด`) +
     `<div class="toolbar pop"><div class="seg">${segs}</div><span class="spacer"></span>
-     <button class="btn primary sm" data-act="add-quest">+ เพิ่มเควสใหม่</button></div>` +
-    (list.length ? list.map(questItem).join("")
-      : empty(qFilter === "done" ? "📭" : "🎯", qFilter === "done" ? "ยังไม่มีเควสที่สำเร็จ" : "ไม่มีเควสค้าง กดปุ่มด้านบนเพื่อเพิ่ม"));
+     ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-quest-modal">+ มอบหมายเควสให้ห้อง</button>` : `<small class="muted">👑 หัวหน้าห้องเท่านั้นที่เพิ่มเควสได้</small>`}</div>` +
+    (list.length ? list.map(sharedQuestItem).join("")
+      : empty(qFilter === "done" ? "📭" : "🎯", "ไม่มีเควสในหมวดหมู่นี้ เยี่ยมมาก!"));
+}
+
+function renderActivities(){
+  $("#page-activities").innerHTML =
+    pageHead("🎪", "กิจกรรมห้องเรียน", `บอร์ดประกาศกิจกรรมและงานกลุ่มของห้อง ${ROOM}`) +
+    `<div class="toolbar pop"><span class="spacer"></span>
+     ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-act-modal">+ เพิ่มกิจกรรมใหม่</button>` : ``}</div>` +
+    (classActivities.length ? classActivities.map((a, i) => `
+      <div class="quest box pop" style="--c:#f59e0b;--i:${i}">
+        <div class="q-info">
+          <div class="q-title">${esc(a.title)}</div>
+          ${a.description ? `<div class="muted small">${esc(a.description)}</div>` : ""}
+          <div class="tags">
+            <span class="tag">📅 ${fmtShort(a.date)}</span>
+            ${a.assignee ? `<span class="tag gray">👤 ${esc(a.assignee)}</span>` : ""}
+          </div>
+        </div>
+        ${ROLE === 'leader' ? `<button class="del" data-act="del-act" data-id="${a.id}">✕</button>` : ""}
+      </div>`).join("") : empty("🎪", "ยังไม่มีประกาศกิจกรรมในห้องตอนนี้"));
 }
 
 function itemsOn(ds){
   return [
-    ...D.hw.filter(h => h.due === ds).map(h => ({ kind:"hw", id:h.id, title:h.title, short:h.teacher,
-      color:"#5856d6", done:h.done, sub:`⚔️ เควส · ${h.teacher} · ${h.type}` })),
-    ...D.events.filter(e => e.date === ds).map(e => ({ kind:"ev", id:e.id, title:e.title,
-      short:`${EV[e.type].icon}${e.title}`, color:EV[e.type].color, sub:`${EV[e.type].icon} ${e.type}` })),
+    ...sharedQuests.filter(q => q.due === ds).map(q => ({ kind:"shared", id:q.id, title:q.title, short:q.teacher,
+      color:"#5856d6", done:isQuestDone(q.id), sub:`⚔️ เควสห้อง · ${q.teacher}` })),
+    ...classActivities.filter(a => a.date === ds).map(a => ({ kind:"act", id:a.id, title:a.title,
+      short:`🎪${a.title}`, color:"#f59e0b", sub:`🎪 กิจกรรมห้อง` }))
   ];
 }
 
@@ -463,7 +502,7 @@ function renderCalendar(){
   const selLabel = new Date(selDate + "T00:00").toLocaleDateString("th-TH", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
   const classes = SCHEDULE[selWd] ? SCHEDULE[selWd].filter(Boolean).length : 0;
   $("#page-calendar").innerHTML =
-    pageHead("🗓️", "ปฏิทิน", "กำหนดส่งเควสและกิจกรรมสำคัญ") +
+    pageHead("🗓️", "ปฏิทินห้อง", `กำหนดการและกิจกรรมทั้งหมดของ ${ROOM}`) +
     `<div class="cal-head pop">
       <h2>${new Date(calY, calM).toLocaleDateString("th-TH", { month:"long", year:"numeric" })}</h2>
       <button class="icon-btn" data-act="cal" data-d="-1">◀</button>
@@ -476,18 +515,15 @@ function renderCalendar(){
     </div>
     <div class="day-panel box pop" style="--i:2">
       <div class="panel-head"><div style="display:block"><b>${selLabel}</b>
-        <div class="muted small">${classes ? `📚 มีเรียน ${classes} คาบ` : "🏖️ ไม่มีเรียน"}</div></div>
-        <div><button class="btn sm" data-act="add-event" data-date="${selDate}">+ กิจกรรม</button>
-        <button class="btn sm primary" data-act="add-quest" data-date="${selDate}">+ เควส</button></div></div>
+        <div class="muted small">${classes ? `📚 มีเรียน ${classes} คาบ` : "🏖️ ไม่มีเรียน"}</div></div></div>
       ${sel.length ? sel.map(it => `<div class="day-item ${it.done ? "done" : ""}" style="--c:${it.color}">
         <span class="sq"></span>
-        <div class="t" ${it.kind === "hw" ? `data-act="edit" data-id="${it.id}"` : ""}><b>${esc(it.title)}</b><div class="muted small">${esc(it.sub)}</div></div>
-        ${it.kind === "ev" ? `<button class="del" data-act="del-ev" data-id="${it.id}">✕</button>` : ""}</div>`).join("")
-        : `<p class="muted" style="padding:10px 0">ยังไม่มีเควสหรือกิจกรรมในวันนี้ 😴</p>`}
+        <div class="t"><b>${esc(it.title)}</b><div class="muted small">${esc(it.sub)}</div></div></div>`).join("")
+        : `<p class="muted" style="padding:10px 0">ไม่มีกำหนดการในวันนี้ 😴</p>`}
     </div>`;
 }
 
-function renderAll(){ renderSide(); renderHome(); renderTimetable(); renderQuests(); renderCalendar(); }
+function renderAll(){ renderSide(); renderHome(); renderTimetable(); renderQuests(); renderActivities(); renderCalendar(); }
 
 function showPage(p){
   page = p;
@@ -502,72 +538,83 @@ function showPage(p){
 function fillTeachers(){
   const teachers = [...new Set(Object.values(SCHEDULE).flat().filter(s => s && s.teacher).map(s => s.teacher))].sort();
   $("#teacherSelect").innerHTML = teachers.map(t => `<option>${t}</option>`).join("") + `<option>คุณครูท่านอื่น</option>`;
-  $("#eventType").innerHTML = Object.keys(EV).map(k => `<option>${k}</option>`).join("");
 }
 
 function openModal(kind){ const m = $("#modal"); m.dataset.form = kind; m.classList.add("open"); }
 function closeModal(){ $("#modal").classList.remove("open"); }
 
-function openQuest(h = null, date = null){
-  editingId = h?.id || null;
-  const f = $("#questForm").elements, tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
-  $("#questForm").reset();
-  $("#qHead").textContent = h ? "✏️ EDIT QUEST" : "⚔️ NEW QUEST";
-  f["title"].value = h?.title || "";
-  f["teacher"].value = h?.teacher || f["teacher"].options[0].value;
-  f["type"].value = h?.type || "การบ้าน";
-  f["due"].value = h?.due || date || iso(tmr);
-  f["diff"].value = h?.diff || "normal";
-  f["note"].value = h?.note || "";
-  openModal("quest");
-}
-
-function openEvent(date){
-  $("#eventForm").reset();
-  $("#eventForm").elements["date"].value = date || iso(new Date());
-  openModal("event");
-}
-
-$("#questForm").onsubmit = e => {
+$("#questForm").onsubmit = async e => {
   e.preventDefault();
   const f = e.target.elements;
-  const data = { title:f["title"].value.trim(), teacher:f["teacher"].value, type:f["type"].value,
-                 due:f["due"].value, diff:f["diff"].value, note:f["note"].value.trim() };
+  const data = {
+    id: uid(),
+    title: f["title"].value.trim(),
+    teacher: f["teacher"].value,
+    type: f["type"].value,
+    due: f["due"].value,
+    diff: f["diff"].value,
+    note: f["note"].value.trim(),
+    room: ROOM,
+    created_by: user
+  };
   if (!data.title) return;
-  if (editingId) Object.assign(D.hw.find(x => x.id === editingId), data);
-  else D.hw.push({ id:uid(), done:false, ...data });
-  closeModal(); sfx(); toast(editingId ? "✏️ แก้ไขเควสแล้ว" : "⚔️ รับเควสใหม่เรียบร้อย!");
-  commit();
+  try {
+    await sb("shared_quests", "POST", data);
+    closeModal(); sfx(); toast("⚔️ ประกาศเควสให้เพื่อนทั้งห้องแล้ว!");
+    commit();
+  } catch (err) {
+    alert("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
+  }
 };
 
-$("#eventForm").onsubmit = e => {
+$("#actForm").onsubmit = async e => {
   e.preventDefault();
   const f = e.target.elements;
-  D.events.push({ id:uid(), title:f["title"].value.trim(), type:f["type"].value, date:f["date"].value });
-  selDate = f["date"].value;
-  closeModal(); sfx(); toast("🗓️ เพิ่มกิจกรรมสำเร็จ");
-  commit();
+  const data = {
+    id: uid(),
+    title: f["title"].value.trim(),
+    description: f["description"].value.trim(),
+    date: f["date"].value,
+    room_target: ROOM,
+    assignee: f["assignee"].value.trim()
+  };
+  if (!data.title) return;
+  try {
+    await sb("class_activities", "POST", data);
+    closeModal(); sfx(); toast("🎪 เพิ่มกิจกรรมห้องสำเร็จ!");
+    commit();
+  } catch (err) {
+    alert("บันทึกไม่สำเร็จ");
+  }
 };
 
 // ===================== 6) Event Listeners =====================
-document.addEventListener("click", e => {
+document.addEventListener("click", async e => {
   const t = e.target.closest("[data-act]"); if (!t) return;
-  const act = t.dataset.act, id = t.dataset.id || t.closest("[data-id]")?.dataset.id;
-  const h = D?.hw.find(x => x.id === id);
+  const act = t.dataset.act, id = t.dataset.id;
   switch (act){
     case "page":      sfx(); showPage(t.dataset.page); break;
     case "theme":     toggleTheme(); break;
     case "logout":    if (confirm("ต้องการออกจากระบบใช่ไหม?")) logout(); break;
-    case "add-quest": openQuest(null, t.dataset.date); break;
-    case "add-event": openEvent(t.dataset.date); break;
+    case "open-quest-modal": openModal("quest"); break;
+    case "open-act-modal":   openModal("act"); break;
     case "close":     closeModal(); break;
     case "filter":    qFilter = t.dataset.f; sfx(); renderQuests(); break;
-    case "toggle":    toggleQuest(h, t); break;
-    case "edit":      if (h) openQuest(h); break;
-    case "sync-cal":  if (h) syncToGoogleCalendar(h.title, h.due, `ครูผู้สอน: ${h.teacher} (${h.type}) - ${h.note || ""}`); break;
+    case "toggle-shared": toggleSharedQuest(id, t); break;
+    case "sync-cal":  syncToGoogleCalendar(t.dataset.title, t.dataset.due, t.dataset.note); break;
     case "tt-day":    selectedTimetableDay = +t.dataset.day; sfx(); renderTimetable(); break;
-    case "del":       if (confirm("ลบเควสนี้ใช่ไหม?")){ D.hw = D.hw.filter(x => x.id !== id); commit(); } break;
-    case "del-ev":    D.events = D.events.filter(x => x.id !== id); commit(); break;
+    case "del-shared":
+      if (confirm("ลบเควสนี้ออกจากห้องใช่ไหม?")) {
+        await sb(`shared_quests?id=eq.${id}`, "DELETE");
+        commit();
+      }
+      break;
+    case "del-act":
+      if (confirm("ลบกิจกรรมนี้ใช่ไหม?")) {
+        await sb(`class_activities?id=eq.${id}`, "DELETE");
+        commit();
+      }
+      break;
     case "date":      selDate = t.dataset.date; sfx(); renderCalendar(); break;
     case "cal": {
       const d = +t.dataset.d;
@@ -591,10 +638,7 @@ document.documentElement.dataset.theme = localStorage.getItem("ms_theme")
 const n0 = new Date(); calY = n0.getFullYear(); calM = n0.getMonth();
 fillTeachers();
 const session = localStorage.getItem("ms_session");
-if (session) {
-  startApp(session);
-} else {
-  showAuth();
-}
+session ? startApp(session) : showAuth();
+setInterval(() => { if (user){ loadClassData(); renderHome(); renderTimetable(); } }, 30000);
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");

@@ -33,6 +33,12 @@
       <div class="only-register reg-fields">
         <label>ชื่อที่ให้เรียก <input name="name" placeholder="เช่น ต้น"></label>
         <label>ห้องเรียน <input name="room" placeholder="เช่น ม.6/12" value="ม.6/12"></label>
+        <label>สถานะ / บทบาท 
+          <select name="role">
+            <option value="student">👨‍🎓 นักเรียนทั่วไป</option>
+            <option value="leader">👑 หัวหน้าห้อง / ผู้ดูแล</option>
+          </select>
+        </label>
         <label>เลือกรูปโปรไฟล์ของคุณ</label>
         <div class="avatar-picker" id="avatarPicker">
           <span class="sel" data-av="🐱">🐱</span>
@@ -64,7 +70,8 @@
     <nav class="nav">
       <button data-act="page" data-page="home" class="active"><span>🏠</span><em>หน้าหลัก</em></button>
       <button data-act="page" data-page="timetable"><span>📅</span><em>ตารางเรียน</em></button>
-      <button data-act="page" data-page="quests"><span>⚔️</span><em>เควส / งาน</em><i id="badge"></i></button>
+      <button data-act="page" data-page="quests"><span>⚔️</span><em>เควสห้องเรียน</em><i id="badge"></i></button>
+      <button data-act="page" data-page="activities"><span>🎪</span><em>กิจกรรมห้อง</em></button>
       <button data-act="page" data-page="calendar"><span>🗓️</span><em>ปฏิทิน</em></button>
     </nav>
   </aside>
@@ -72,6 +79,7 @@
     <section class="page active" id="page-home"></section>
     <section class="page" id="page-timetable"></section>
     <section class="page" id="page-quests"></section>
+    <section class="page" id="page-activities"></section>
     <section class="page" id="page-calendar"></section>
   </main>
 </div>
@@ -79,8 +87,10 @@
 <!-- ========== หน้าต่างเพิ่มเควส / กิจกรรม ========== -->
 <div class="modal" id="modal">
   <div class="modal-backdrop" data-act="close"></div>
+  
+  <!-- ฟอร์มเพิ่มเควส (หัวหน้าห้องสั่งงาน) -->
   <form class="modal-box box" id="questForm" autocomplete="off">
-    <h2 id="qHead">⚔️ NEW QUEST</h2>
+    <h2 id="qHead">⚔️ มอบหมายเควสให้ห้อง</h2>
     <label>ชื่องาน / เควส <input name="title" required placeholder="เช่น การบ้านฟิสิกส์ หน้า 45"></label>
     <div class="row">
       <label>คุณครูผู้สอน <select name="teacher" id="teacherSelect"></select></label>
@@ -95,16 +105,30 @@
       </select></label>
     </div>
     <label>รายละเอียดเพิ่มเติม <textarea name="note" rows="2" placeholder="เช่น ทำข้อคู่ทั้งหมด ส่งในคาบ"></textarea></label>
-    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึกเควส</button></div>
+    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">ประกาศให้ทั้งห้อง</button></div>
   </form>
+
+  <!-- ฟอร์มเพิ่มกิจกรรมห้อง -->
+  <form class="modal-box box" id="actForm" autocomplete="off">
+    <h2>🎪 เพิ่มกิจกรรมห้องเรียน</h2>
+    <label>ชื่องาน / กิจกรรม <input name="title" required placeholder="เช่น ซ้อมกีฬาสี / ทำความสะอาดห้อง"></label>
+    <div class="row">
+      <label>วันที่จัด <input name="date" type="date" required></label>
+      <label>ผู้รับผิดชอบ <input name="assignee" placeholder="เช่น เวรทำความสะอาดกลุ่ม 1"></label>
+    </div>
+    <label>รายละเอียด <textarea name="description" rows="2" placeholder="รายละเอียดเพิ่มเติมของกิจกรรม"></textarea></label>
+    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึกกิจกรรม</button></div>
+  </form>
+
+  <!-- ฟอร์มปฏิทินส่วนตัว -->
   <form class="modal-box box" id="eventForm" autocomplete="off">
     <h2>🗓️ NEW EVENT</h2>
-    <label>ชื่อกิจกรรม / วันสำคัญ <input name="title" required placeholder="เช่น สอบกลางภาค วิชาเคมี"></label>
+    <label>ชื่อกิจกรรมส่วนตัว <input name="title" required placeholder="เช่น สอบย่อย"></label>
     <div class="row">
       <label>ประเภท <select name="type" id="eventType"></select></label>
       <label>วันที่ <input name="date" type="date" required></label>
     </div>
-    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึกกิจกรรม</button></div>
+    <div class="row"><button type="button" class="btn" data-act="close">ยกเลิก</button><button class="btn primary">บันทึก</button></div>
   </form>
 </div>
 
