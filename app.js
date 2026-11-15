@@ -71,7 +71,6 @@ function toast(msg){
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-// ระบบเสียง 8-bit ซิงค์กับเบราว์เซอร์
 let actx;
 function sfx(type){
   try {
@@ -96,25 +95,23 @@ function confetti(x = innerWidth / 2, y = innerHeight / 2){
   }
 }
 
-// ฟังก์ชันสร้างลิงก์ซิงค์ไป Google Calendar
 function syncToGoogleCalendar(title, due, details = ""){
-  // แปลงวันที่ส่ง (YYYY-MM-DD) เป็นรูปแบบที่ Google Calendar ต้องการ (YYYYMMDD)
   const dStr = due.replace(/-/g, "");
   const text = encodeURIComponent(`⚔️ เควส: ${title}`);
   const detailsEnc = encodeURIComponent(`รายละเอียด: ${details}\n\nจัดการผ่าน School Quest 🎒`);
-  // สร้างลิงก์ Google Calendar แบบระบุวันเดียวจบ (All-day event)
   const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dStr}/${dStr}&details=${detailsEnc}`;
   window.open(url, "_blank");
 }
 
 // ===================== 3) จัดการผู้ใช้ =====================
-const getUsers = () => JSON.parse(localStorage.getItem("ms_users_v3") || "{}");
-const setUsers = u => localStorage.setItem("ms_users_v3", JSON.stringify(u));
+const getUsers = () => JSON.parse(localStorage.getItem("ms_users_v4") || "{}");
+const setUsers = u => localStorage.setItem("ms_users_v4", JSON.stringify(u));
 const newData = () => ({ hw:[], events:[], xp:0, coins:0, streak:0, lastDay:"", done:0, badges:[], avatar:"🐱", room:"ม.6/12" });
 
 let user = null, NAME = "", ROOM = "ม.6/12", AVATAR = "🐱", D = null;
 let page = "home", qFilter = "todo", editingId = null;
 let calY, calM, selDate = iso(new Date());
+let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
 
 function persist(){ const u = getUsers(); if (u[user]) { u[user].data = D; setUsers(u); } }
 function commit(){ persist(); renderAll(); }
@@ -126,12 +123,12 @@ async function hash(pw, salt){
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-let selectedAvatar = "🐱";
 qsa("#avatarPicker span").forEach(el => el.onclick = () => {
   qsa("#avatarPicker span").forEach(x => x.classList.remove("sel"));
   el.classList.add("sel");
   selectedAvatar = el.dataset.av;
 });
+let selectedAvatar = "🐱";
 
 let authMode = "login";
 qsa(".auth-tabs button").forEach(b => b.onclick = () => {
@@ -324,22 +321,60 @@ function renderHome(){
 
 function renderTimetable(){
   const today = new Date().getDay(), m = nowMin();
+  const arr = SCHEDULE[selectedTimetableDay] || [];
+  
+  const dayBtns = [1,2,3,4,5].map(d => `
+    <button class="day-tab ${d === selectedTimetableDay ? "active" : ""}" data-act="tt-day" data-day="${d}">
+      ${DAYS[d].slice(0,3)}
+    </button>`).join("");
+
+  let listHtml = "";
+  arr.forEach((s, p) => {
+    if (!s && p !== LUNCH) return;
+    const [st, en] = PERIODS[p];
+    if (p === LUNCH){
+      listHtml += `<div class="card lunch-card box">🍱 พักกลางวัน · ${st} - ${en} น.</div>`;
+      return;
+    }
+    const isNow = (selectedTimetableDay === today && m >= toMin(st) && m < toMin(en));
+    const isPast = (selectedTimetableDay === today && m >= toMin(en));
+    const c = colorOf(s);
+    
+    listHtml += `
+      <div class="tt-row box ${isNow ? "now" : ""} ${isPast ? "past" : ""}" style="--c:${c}">
+        <div class="tt-time"><span>คาบ ${p+1}</span><small>${st}-${en}</small></div>
+        <div class="tt-divider"></div>
+        <div class="tt-detail">
+          <b>${esc(label(s))}</b>
+          <div class="muted small">${metaOf(s)}</div>
+        </div>
+        ${isNow ? `<span class="tag" style="--c:#ff9500">กำลังเรียน</span>` : ""}
+      </div>`;
+  });
+
   const curP = SCHEDULE[today] ? PERIODS.findIndex(([a, b]) => m >= toMin(a) && m < toMin(b)) : -1;
-  const head = `<tr><th>วัน / คาบ</th>${PERIODS.map((p, i) =>
-    `<th class="${i === curP ? "now-col" : ""}"><span class="px">${i + 1}</span><small>${p[0]}-${p[1]}</small></th>`).join("")}</tr>`;
+  const head = `<tr><th>วัน / คาบ</th>${PERIODS.map((p, i) => 
+    `<th class="${today === selectedTimetableDay && i === curP ? "now-col" : ""}"><span class="px">${i+1}</span><small>${p[0]}-${p[1]}</small></th>`).join("")}</tr>`;
+  
   const body = [1,2,3,4,5].map(d => `<tr class="${d === today ? "today" : ""}">
     <th class="day" style="--dc:${DAY_COLOR[d]}">${DAYS[d]}</th>
     ${SCHEDULE[d].map((s, p) => {
       if (p === LUNCH) return d === 1 ? `<td rowspan="5" class="lunch"><span>พักกลางวัน</span></td>` : "";
       if (!s) return `<td></td>`;
-      return `<td class="cell ${d === today && p === curP ? "now" : ""}" style="--c:${colorOf(s)}">
+      return `<td class="cell" style="--c:${colorOf(s)}">
         <b>${esc(label(s))}</b>${s.teacher ? `<small>${esc(s.teacher)}</small>` : ""}${s.room ? `<small>📍${esc(s.room)}</small>` : ""}</td>`;
     }).join("")}</tr>`).join("");
+
   $("#page-timetable").innerHTML =
-    pageHead("📅", "ตารางเรียน", `${ROOM} · ภาคเรียนที่ 2/2569 · โรงเรียนบ้านไผ่`) +
-    `<div class="table-wrap pop"><table class="tt"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-     <div class="legend pop">${Object.values(GROUPS).map(g => `<span style="--c:${g.color}">${g.name}</span>`).join("")}
-     <span style="--c:${GRAY}">กิจกรรม</span></div>`;
+    pageHead("📅", "ตารางเรียน", `${ROOM} · ภาคเรียนที่ 2/2569`) +
+    `<div class="mobile-tt-container">
+       <div class="tt-days-bar">${dayBtns}</div>
+       <div class="tt-list">${listHtml}</div>
+     </div>
+     <div class="desktop-tt-container">
+       <div class="table-wrap pop"><table class="tt"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+     </div>
+     <div class="legend pop">${Object.values(GROUPS).map(g => `<span style="--c:${g.color}">${g.name}</span>`).join("")}</div>`;
 }
 
 function renderQuests(){
@@ -482,6 +517,7 @@ document.addEventListener("click", e => {
     case "toggle":    toggleQuest(h, t); break;
     case "edit":      if (h) openQuest(h); break;
     case "sync-cal":  if (h) syncToGoogleCalendar(h.title, h.due, `ครูผู้สอน: ${h.teacher} (${h.type}) - ${h.note || ""}`); break;
+    case "tt-day":    selectedTimetableDay = +t.dataset.day; sfx(); renderTimetable(); break;
     case "del":       if (confirm("ลบเควสนี้ใช่ไหม?")){ D.hw = D.hw.filter(x => x.id !== id); commit(); } break;
     case "del-ev":    D.events = D.events.filter(x => x.id !== id); commit(); break;
     case "date":      selDate = t.dataset.date; sfx(); renderCalendar(); break;
