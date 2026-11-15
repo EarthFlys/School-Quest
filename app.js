@@ -1,6 +1,6 @@
 // ===================== 0) ตั้งค่า SUPABASE & หัวหน้าห้อง =====================
 const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtaXVubW90bWJud3N3c3Buemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg2MjYsImV4cCI6MjA1NjgxNDYyNn0.YourActualKeyHere"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
+const SUPABASE_KEY = "sb_publishable_0wNEgBPE9JCxeV1Rg1M1GA_Gde0FHpt"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
 
 // 👑 ตั้งค่ารายชื่อบัญชีหัวหน้าห้อง (เพิ่มชื่อและรหัสผ่านได้หลายคน)
 const LEADERS = {
