@@ -44,9 +44,9 @@
         </div>
       </div>
       <label>ชื่อผู้ใช้ 
-  <input name="username" required autocomplete="off" data-lpignore="true" spellcheck="false" placeholder="username (ถ้าเป็นหัวหน้า ใส่ชื่อเฉพาะ)">
+  <input name="username" required autocomplete="off" autocapitalize="off" autocorrect="off" data-lpignore="true" spellcheck="false" placeholder="username (ถ้าเป็นหัวหน้า ใส่ชื่อเฉพาะ)">
 </label>
-      <label>รหัสผ่าน <input name="password" type="password" required minlength="4" placeholder="รหัสผ่าน"></label>
+      <label>รหัสผ่าน <input name="password" type="password" required minlength="4" autocapitalize="off" autocorrect="off" placeholder="รหัสผ่าน"></label>
       <button class="btn primary" type="submit">START ▶</button>
       <p class="auth-msg" id="authMsg"></p>
     </form>
@@ -92,7 +92,8 @@
     <!-- ฟอร์มเพิ่มเควส (สำหรับหัวหน้า) -->
     <form class="modal-box box" id="questForm" autocomplete="off">
       <button type="button" class="close-btn" data-act="close" aria-label="ปิด">✕</button>
-      <h2>⚔️ มอบหมายเควสให้ห้อง</h2>
+      <input type="hidden" name="id">
+      <h2 id="questFormTitle">⚔️ มอบหมายเควสให้ห้อง</h2>
       <label>ชื่อเควส / การบ้าน <input name="title" required placeholder="เช่น ทำแบบฝึกหัด หน้า 50"></label>
       <div class="row">
         <label>คุณครู <select name="teacher" id="teacherSelect"></select></label>
@@ -118,7 +119,7 @@
       <label>รายละเอียดเพิ่มเติม <textarea name="note" rows="2" placeholder="เช่น ทำข้อคู่ทั้งหมด ส่งในคาบ"></textarea></label>
       <div class="row">
         <button type="button" class="btn" data-act="close">ยกเลิก</button>
-        <button type="submit" class="btn primary">ประกาศให้ทั้งห้อง</button>
+        <button type="submit" class="btn primary" id="questSubmit">ประกาศให้ทั้งห้อง</button>
       </div>
     </form>
 

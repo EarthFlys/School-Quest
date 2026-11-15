@@ -1,6 +1,6 @@
 // ===================== 0) ตั้งค่า SUPABASE & หัวหน้าห้อง =====================
 const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtaXVubW90bWJuc3N3c3Buemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMjY0MDMsImV4cCI6MjA5MjcwMjQwM30.euitW1by8xkBnH3YtTOf2v6gWazVJLebyPDXF_COOYM"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtaXVubW90bWJud3N3c3Buemp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMzg2MjYsImV4cCI6MjA1NjgxNDYyNn0.YourActualKeyHere"; // (ใช้คีย์ของคุณตัวเดิมได้เลยครับ)
 
 // 👑 ตั้งค่ารายชื่อบัญชีหัวหน้าห้อง (เพิ่มชื่อและรหัสผ่านได้หลายคน)
 const LEADERS = {
@@ -137,7 +137,7 @@ const newData = () => ({ hw:[], xp:0, coins:0, streak:0, lastDay:"", done:0, bad
 
 let user = null, NAME = "", ROOM = "ม.6/12", ROLE = "student", AVATAR = "🐱", D = null;
 let sharedQuests = [], classActivities = [], members = [], membersErr = "", openQuests = new Set();
-let page = "home", qFilter = "todo";
+let page = "home", qFilter = "todo", qSearch = "", saving = false;
 let calY, calM, selDate = iso(new Date());
 let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
 
@@ -153,7 +153,6 @@ async function loadClassData(){
   } catch (err) {
     console.error("โหลดข้อมูลห้องไม่สำเร็จ:", err);
   }
-  if (ROLE !== "leader") return;
   try {
     const all = await sb("users?select=username,name,room,data");
     members = (all || []).filter(m => normRoom(m.room) === ROOM)
@@ -282,7 +281,7 @@ async function startApp(username){
     
     await loadClassData();
     $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
-    dailyCheck(); renderAll(); showPage("home");
+    dailyCheck(); renderAll(); showPage("home"); maybeNotify();
   } catch (err) {
     console.error(err);
     showAuth();
@@ -379,7 +378,8 @@ function progressBox(q){
   const pct = Math.round(dn.length / members.length * 100), open = openQuests.has(q.id);
   return `<div class="progress ${open ? "open" : ""}">
     <div class="progress-top"><b>👥 ทำเสร็จแล้ว ${dn.length}/${members.length} คน (${pct}%)</b>
-      <button type="button" class="btn sm" data-act="who" data-id="${q.id}">${open ? "ซ่อนรายชื่อ" : "ดูรายชื่อ"}</button></div>
+      <span class="pt-btns"><button type="button" class="btn sm" data-act="copy-pending" data-id="${q.id}">📋 ยังไม่ส่ง</button>
+      <button type="button" class="btn sm" data-act="who" data-id="${q.id}">${open ? "ซ่อนรายชื่อ" : "ดูรายชื่อ"}</button></span></div>
     <div class="xpbar thin"><div style="width:${pct}%"></div></div>
     <div class="who">
       <div class="ok"><h4>✅ เสร็จแล้ว (${dn.length})</h4>${dn.map(memberChip).join("") || `<small class="muted">ยังไม่มีใครส่ง</small>`}</div>
@@ -390,7 +390,7 @@ function progressBox(q){
 function sharedQuestItem(q, i = 0){
   const done = isQuestDone(q.id);
   const [cls, txt] = dueInfo(q.due, done), dif = DIFF[q.diff || "normal"];
-  return `<div class="quest box pop ${done ? "done" : ""}" data-id="${q.id}" style="--c:#5856d6;--i:${i}">
+  return `<div class="quest box pop ${done ? "done" : ""}" data-id="${q.id}" data-q="${esc((q.title + " " + q.teacher + " " + q.type + " " + (q.note || "")).toLowerCase())}" style="--c:#5856d6;--i:${i}">
     <button class="check" data-act="toggle-shared" data-id="${q.id}" aria-label="ทำเสร็จแล้ว">${done ? "✔" : ""}</button>
     <div class="q-info">
       <div class="q-title">${esc(q.title)}</div>
@@ -404,8 +404,67 @@ function sharedQuestItem(q, i = 0){
     <div class="quest-actions">
       <button class="btn sm" data-act="sync-cal" data-title="${esc(q.title)}" data-due="${q.due}" data-note="${esc(q.note || '')}" title="ซิงค์ไป Google Calendar">🗓️ ซิงค์</button>
       <div class="reward">+${dif.xp}XP</div>
-      ${ROLE === 'leader' ? `<button class="del" data-act="del-shared" data-id="${q.id}" title="ลบเควส">✕</button>` : ""}
+      ${ROLE === 'leader' ? `<button class="del" data-act="edit-shared" data-id="${q.id}" title="แก้ไขเควส">✏️</button><button class="del" data-act="del-shared" data-id="${q.id}" title="ลบเควส">✕</button>` : ""}
     </div></div>`;
+}
+
+function urgentBar(){
+  const p = pendingShared(), late = p.filter(q => daysLeft(q.due) < 0),
+    td = p.filter(q => daysLeft(q.due) === 0), tm = p.filter(q => daysLeft(q.due) === 1);
+  if (!late.length && !td.length && !tm.length) return "";
+  const parts = [late.length && `🔴 เลยกำหนด ${late.length}`, td.length && `🟠 ส่งวันนี้ ${td.length}`, tm.length && `🟡 ส่งพรุ่งนี้ ${tm.length}`].filter(Boolean).join(" · ");
+  const names = [...late, ...td, ...tm].slice(0, 3).map(q => esc(q.title)).join(" · ");
+  return `<div class="alert box pop"><span class="c-icon">⏰</span><div><b>${parts}</b><div class="muted">${names}</div></div></div>`;
+}
+
+function leaderboardHtml(){
+  const rows = members.map(m => m.username === user ? { ...m, data: D } : m);
+  if (!rows.some(m => m.username === user)) rows.push({ username: user, name: NAME, data: D });
+  if (rows.length < 2) return "";
+  rows.sort((a, b) => (b.data?.xp || 0) - (a.data?.xp || 0));
+  const medal = ["🥇", "🥈", "🥉"];
+  const row = (m, i) => `<div class="lb-row box ${m.username === user ? "me" : ""}"><span class="lb-rank">${medal[i] || i + 1}</span>
+    <span class="lb-av">${esc(m.data?.avatar || "🙂")}</span><b>${esc(m.name || m.username)}${isLeaderName(m.username) ? " 👑" : ""}</b>
+    <small class="muted">LV.${levelOf(m.data?.xp || 0)} · ${m.data?.xp || 0} XP</small></div>`;
+  const myI = rows.findIndex(m => m.username === user);
+  return `<h3 class="h3">🏅 อันดับห้อง ${esc(ROOM)}</h3><div class="lb">${rows.slice(0, 5).map(row).join("")}${myI >= 5 ? `<div class="lb-gap">⋯</div>${row(rows[myI], myI)}` : ""}</div>`;
+}
+
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); }
+  catch {
+    const ta = document.createElement("textarea"); ta.value = t; ta.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch {} ta.remove();
+  }
+  toast("📋 คัดลอกแล้ว วางในไลน์ได้เลย");
+}
+function summaryText(){
+  const list = sharedQuests.filter(q => daysLeft(q.due) >= 0).sort((a, b) => a.due.localeCompare(b.due));
+  if (!list.length) return `✅ ห้อง ${ROOM} ไม่มีงานค้างตอนนี้`;
+  return `📚 งานห้อง ${ROOM} (อัปเดต ${fmtShort(iso(new Date()))})\n` +
+    list.map((q, i) => `${i + 1}) ${q.title} (${q.teacher}) · ส่ง ${fmtShort(q.due)} ${dueInfo(q.due, false)[1]}`).join("\n");
+}
+function applySearch(){
+  qsa("#page-quests .quest").forEach(c => c.classList.toggle("hidden", !!qSearch && !(c.dataset.q || "").includes(qSearch)));
+}
+const actWhen = ds => { const d = daysLeft(ds); return d < 0 ? "ผ่านไปแล้ว" : d === 0 ? "วันนี้!" : d === 1 ? "พรุ่งนี้" : `อีก ${d} วัน`; };
+
+async function enableNotify(){
+  if (!("Notification" in window)) return toast("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน");
+  const p = await Notification.requestPermission();
+  if (p === "granted"){ localStorage.setItem("ms_notify", "1"); toast("🔔 เปิดแจ้งเตือนงานใกล้ส่งแล้ว"); maybeNotify(true); }
+  else toast("ไม่ได้รับอนุญาตให้แจ้งเตือน");
+}
+function maybeNotify(force){
+  try {
+    if (!("Notification" in window) || Notification.permission !== "granted" || !localStorage.getItem("ms_notify")) return;
+    const today = iso(new Date());
+    if (!force && localStorage.getItem("ms_notified") === today) return;
+    const u = pendingShared().filter(q => daysLeft(q.due) <= 1);
+    if (!u.length) return;
+    localStorage.setItem("ms_notified", today);
+    new Notification("School Quest ⏰", { body: `มี ${u.length} งานใกล้ส่ง: ${u.slice(0, 3).map(q => q.title).join(", ")}`, icon: "icon-192.png" });
+  } catch {}
 }
 
 function nowCard(){
@@ -441,7 +500,8 @@ function renderHome(){
   
   PUT.home =
     pageHead("👋", `${greet}, ${esc(NAME)}!`, `💬 "${randomQuote}"`,
-      `<button class="icon-btn" data-act="theme" title="สลับโหมด">🌓</button>
+      `<button class="icon-btn" data-act="notify" title="เปิดแจ้งเตือนงานใกล้ส่ง">🔔</button>
+       <button class="icon-btn" data-act="theme" title="สลับโหมด">🌓</button>
        <button class="icon-btn" data-act="logout" title="ออกจากระบบ">🚪</button>`) +
     `<div class="player box pop" style="--i:1">
       <div class="pet">${PETS[rank(lv)]}</div>
@@ -456,9 +516,12 @@ function renderHome(){
         <div class="stat"><span>⚔️</span><b>${D.done}</b><small>สำเร็จ</small></div>
       </div>
     </div>` +
+    urgentBar() +
     nowCard() +
     `<h3 class="h3">⚔️ เควสห้องเรียนที่ต้องเคลียร์</h3>` +
     (pend.length ? pend.slice(0, 3).map(sharedQuestItem).join("") : empty("✨", "ไม่มีเควสค้าง เยี่ยมมาก!")) +
+    (pend.length > 3 ? `<button class="btn sm more-btn" data-act="page" data-page="quests">ดูเควสทั้งหมด (${pend.length}) ▶</button>` : "") +
+    leaderboardHtml() +
     `<h3 class="h3">🏆 ความสำเร็จ (${D.badges.length}/${BADGES.length})</h3>
      <div class="badges">${BADGES.map((b, i) => `<div class="badge box pop ${D.badges.includes(b.id) ? "" : "locked"}" style="--i:${i}" title="${b.desc}">
        <span>${b.icon}</span><small><b>${b.name}</b></small><small class="muted">${b.desc}</small></div>`).join("")}</div>`;
@@ -532,10 +595,12 @@ function renderQuests(){
   
   PUT.quests =
     pageHead("⚔️", "เควสห้องเรียน", `สมาชิกห้อง ${ROOM} เห็นงานชุดเดียวกันทั้งหมด`) +
-    `<div class="toolbar pop"><div class="seg">${segs}</div><span class="spacer"></span>
-     ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-quest-modal">+ มอบหมายเควสให้ห้อง</button>` : `<small class="muted">👑 เฉพาะหัวหน้าห้องที่กำหนด</small>`}</div>` +
+    `<div class="toolbar pop"><div class="seg">${segs}</div>
+     <input class="search" data-search placeholder="🔍 ค้นหางาน / ครู" value="${esc(qSearch)}"><span class="spacer"></span>
+     ${ROLE === 'leader' ? `<button class="btn sm" data-act="copy-summary">📋 คัดลอกสรุปงาน</button><button class="btn primary sm" data-act="open-quest-modal">+ มอบหมายเควสให้ห้อง</button>` : `<small class="muted">👑 เฉพาะหัวหน้าห้องที่กำหนด</small>`}</div>` +
     (list.length ? list.map(sharedQuestItem).join("")
       : empty(qFilter === "done" ? "📭" : "🎯", "ไม่มีเควสในหมวดหมู่นี้ เยี่ยมมาก!"));
+  applySearch();
 }
 
 function renderActivities(){
@@ -543,13 +608,13 @@ function renderActivities(){
     pageHead("🎪", "กิจกรรมห้องเรียน", `บอร์ดประกาศกิจกรรมและงานกลุ่มของห้อง ${ROOM}`) +
     `<div class="toolbar pop"><span class="spacer"></span>
      ${ROLE === 'leader' ? `<button class="btn primary sm" data-act="open-act-modal">+ เพิ่มกิจกรรมใหม่</button>` : ``}</div>` +
-    (classActivities.length ? classActivities.map((a, i) => `
-      <div class="quest box pop" style="--c:#f59e0b;--i:${i}">
+    (classActivities.length ? [...classActivities].sort((a, b) => a.date.localeCompare(b.date)).map((a, i) => `
+      <div class="quest box pop ${daysLeft(a.date) < 0 ? "past" : ""}" style="--c:#f59e0b;--i:${i}">
         <div class="q-info">
           <div class="q-title">${esc(a.title)}</div>
           ${a.description ? `<div class="muted small">${esc(a.description)}</div>` : ""}
           <div class="tags">
-            <span class="tag">📅 ${fmtShort(a.date)}</span>
+            <span class="tag">📅 ${fmtShort(a.date)} · ${actWhen(a.date)}</span>
             ${a.assignee ? `<span class="tag gray">👤 ${esc(a.assignee)}</span>` : ""}
           </div>
         </div>
@@ -619,12 +684,22 @@ function fillTeachers(){
   $("#teacherSelect").innerHTML = teachers.map(t => `<option>${t}</option>`).join("") + `<option>คุณครูท่านอื่น</option>`;
 }
 
-function openModal(kind){
+function openModal(kind, item){
   if (ROLE !== "leader") return;
-  const m = $("#modal");
-  m.dataset.form = kind;
-  const d = $(kind === "quest" ? "#questForm [name=due]" : "#actForm [name=date]");
-  if (d && !d.value) d.value = iso(new Date());
+  const m = $("#modal"); m.dataset.form = kind;
+  if (kind === "quest"){
+    const f = $("#questForm").elements, editing = !!item;
+    $("#questFormTitle").textContent = editing ? "✏️ แก้ไขเควส" : "⚔️ มอบหมายเควสให้ห้อง";
+    $("#questSubmit").textContent = editing ? "บันทึกการแก้ไข" : "ประกาศให้ทั้งห้อง";
+    f["id"].value = item?.id || "";
+    if (editing){
+      if (![...f["teacher"].options].some(o => o.value === item.teacher)) f["teacher"].add(new Option(item.teacher, item.teacher));
+      f["title"].value = item.title; f["teacher"].value = item.teacher; f["type"].value = item.type;
+      f["due"].value = item.due; f["diff"].value = item.diff || "normal"; f["note"].value = item.note || "";
+    } else if (!f["due"].value) f["due"].value = iso(new Date());
+  } else {
+    const d = $("#actForm [name=date]"); if (!d.value) d.value = iso(new Date());
+  }
   m.classList.add("open");
   setTimeout(() => $(kind === "quest" ? "#questForm [name=title]" : "#actForm [name=title]")?.focus(), 80);
 }
@@ -632,52 +707,41 @@ function openModal(kind){
 function closeModal(){
   $("#modal").classList.remove("open");
   $("#questForm").reset(); $("#actForm").reset();
+  $("#questForm").elements["id"].value = "";   // hidden input ไม่ถูก reset เอง
 }
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
 $("#questForm").onsubmit = async e => {
   e.preventDefault();
-  const f = e.target.elements;
-  const data = {
-    id: uid(),
-    title: f["title"].value.trim(),
-    teacher: f["teacher"].value,
-    type: f["type"].value,
-    due: f["due"].value,
-    diff: f["diff"].value,
-    note: f["note"].value.trim(),
-    room: ROOM,
-    created_by: user
-  };
-  if (!data.title || ROLE !== "leader") return;
+  if (saving || ROLE !== "leader") return;
+  const f = e.target.elements, editId = f["id"].value;
+  const data = { title: f["title"].value.trim(), teacher: f["teacher"].value, type: f["type"].value,
+    due: f["due"].value, diff: f["diff"].value, note: f["note"].value.trim() };
+  if (!data.title) return;
+  const btn = e.target.querySelector("[type=submit]"); saving = true; btn.disabled = true;
   try {
-    await sb("shared_quests", "POST", data);
-    closeModal(); sfx(); toast("⚔️ ประกาศเควสให้เพื่อนทั้งห้องแล้ว!");
+    if (editId) await sb(`shared_quests?id=eq.${enc(editId)}`, "PATCH", data);
+    else await sb("shared_quests", "POST", { id: uid(), ...data, room: ROOM, created_by: user });
+    closeModal(); sfx(); toast(editId ? "✏️ แก้ไขเควสแล้ว" : "⚔️ ประกาศเควสให้เพื่อนทั้งห้องแล้ว!");
     commit();
-  } catch (err) {
-    alert("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง");
-  }
+  } catch (err) { console.error(err); toast("⚠️ บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+  finally { saving = false; btn.disabled = false; }
 };
 
 $("#actForm").onsubmit = async e => {
   e.preventDefault();
+  if (saving || ROLE !== "leader") return;
   const f = e.target.elements;
-  const data = {
-    id: uid(),
-    title: f["title"].value.trim(),
-    description: f["description"].value.trim(),
-    date: f["date"].value,
-    room_target: ROOM,
-    assignee: f["assignee"].value.trim()
-  };
-  if (!data.title || ROLE !== "leader") return;
+  const data = { id: uid(), title: f["title"].value.trim(), description: f["description"].value.trim(),
+    date: f["date"].value, room_target: ROOM, assignee: f["assignee"].value.trim() };
+  if (!data.title) return;
+  const btn = e.target.querySelector("[type=submit]"); saving = true; btn.disabled = true;
   try {
     await sb("class_activities", "POST", data);
     closeModal(); sfx(); toast("🎪 เพิ่มกิจกรรมห้องสำเร็จ!");
     commit();
-  } catch (err) {
-    alert("บันทึกไม่สำเร็จ");
-  }
+  } catch (err) { console.error(err); toast("⚠️ บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง"); }
+  finally { saving = false; btn.disabled = false; }
 };
 
 // ===================== 6) Event Listeners =====================
@@ -693,6 +757,15 @@ document.addEventListener("click", async e => {
     case "close":     closeModal(); break;
     case "filter":    qFilter = t.dataset.f; sfx(); renderQuests(); break;
     case "toggle-shared": toggleSharedQuest(id || t.closest("[data-id]")?.dataset.id, t); break;
+    case "edit-shared": { const q = sharedQuests.find(x => x.id === id); if (q) openModal("quest", q); break; }
+    case "copy-summary": copyText(summaryText()); break;
+    case "copy-pending": {
+      const q = sharedQuests.find(x => x.id === id); if (!q) break;
+      const pd = members.filter(m => !memberDone(m, id));
+      copyText(`⏳ ยังไม่ส่ง «${q.title}» (${pd.length} คน)\n` + (pd.map(m => m.name || m.username).join(", ") || "ส่งครบแล้ว 🎉"));
+      break;
+    }
+    case "notify": enableNotify(); break;
     case "who": {
       const box = t.closest(".progress"); if (!box) break;
       const open = box.classList.toggle("open");
@@ -723,6 +796,10 @@ document.addEventListener("click", async e => {
   }
 });
 
+document.addEventListener("input", e => {
+  if (e.target.matches("[data-search]")){ qSearch = e.target.value.trim().toLowerCase(); applySearch(); }
+});
+
 function toggleTheme(){
   const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = t;
@@ -738,12 +815,14 @@ fillTeachers();
 const session = localStorage.getItem("ms_session");
 session ? startApp(session) : showAuth();
 const classSig = () => JSON.stringify([sharedQuests, classActivities, membersErr,
-  members.map(m => [m.username, (m.data?.hw || []).filter(h => h.done).length])]);
-setInterval(async () => {
+  members.map(m => [m.username, (m.data?.hw || []).filter(h => h.done).length, m.data?.xp || 0])]);
+async function refreshClass(){
   if (!user || document.hidden || $("#modal").classList.contains("open")) return;
   const before = classSig();
   await loadClassData();
   if (classSig() !== before) renderAll(); else { renderHome(); renderTimetable(); }
-}, 15000);
+}
+setInterval(refreshClass, 15000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshClass(); });
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
