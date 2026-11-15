@@ -253,7 +253,11 @@ input:focus,select:focus,textarea:focus{transform:translate(-1px,-1px); box-shad
 /* Modal & Toast */
 .modal{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:20px;pointer-events:none}
 .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);opacity:0;transition:opacity .2s}
-.modal.open{pointer-events:auto}
+.modal{visibility:hidden}
+.modal.open{pointer-events:auto;visibility:visible}
+.modal-content{position:relative;background:none!important;border:0!important;box-shadow:none!important;width:min(100%,500px)}
+.modal-content .modal-box{width:100%}
+.close-btn{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border:2px solid var(--ink);border-radius:8px;background:var(--panel);color:var(--ink);cursor:pointer;font-size:14px;line-height:1}
 .modal.open .modal-backdrop{opacity:1}
 .modal-box{position:relative;width:min(100%,500px);padding:28px;display:none;flex-direction:column;gap:16px;box-shadow:8px 8px 0 var(--shadow)}
 .modal[data-form=quest].open #questForm,.modal[data-form=event].open #eventForm{display:flex;animation:slideUp .25s ease}
@@ -292,14 +296,20 @@ input:focus,select:focus,textarea:focus{transform:translate(-1px,-1px); box-shad
   .quest-actions .btn{padding:6px 10px;font-size:12px}
   .reward{display:none}
 }
-/* วางไว้ข้างนอกสุด ท้ายไฟล์ style.css หรือส่วนไหนก็ได้ที่ไม่ติดปีกกา Media Query */
-input::-webkit-clear-button,
-input::-webkit-inner-spin-button,
-input::-webkit-search-cancel-button {
+/* ซ่อนปุ่มกากบาท Clear และไอคอนประวัติทั้งหมดของเบราว์เซอร์ทุกชนิด */
+input::-ms-clear,
+input::-ms-reveal {
   display: none !important;
-  -webkit-appearance: none !important;
 }
 
-input::-webkit-calendar-picker-indicator {
-  opacity: 0;
+input::-webkit-search-cancel-button,
+input::-webkit-search-decoration,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+/* ปิดการแสดงปุ่มเคลียร์เฉพาะกิจของ Edge */
+::-webkit-clear-button {
+  display: none !important;
 }
