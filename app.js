@@ -1,3 +1,25 @@
+// ===================== 0) ตั้งค่า SUPABASE (ใส่ค่าของคุณตรงนี้) =====================
+const SUPABASE_URL = "https://dmiunmotmbnsswspnzjt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_0wNEgBPE9JCxeV1Rg1M1GA_Gde0FHpt";
+
+// ฟังก์ชันกลางสำหรับคุยกับ Supabase
+async function sb(endpoint, method = "GET", body = null, headers = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    method,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": method === "POST" ? "resolution=merge-duplicates" : "return=representation",
+      ...headers
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
 // ===================== 1) ตารางเรียน ม.6/12 ภาคเรียนที่ 2/2569 =====================
 const PERIODS = [
   ["08:40","09:30"],["09:30","10:20"],["10:20","11:10"],["11:10","12:00"],["12:00","12:50"],
@@ -41,7 +63,7 @@ const PETS = ["🥚","🐣","🐥","🐤","🐔","🦅","🐉"];
 const TITLES = ["มือใหม่","นักเรียนฝึกหัด","นักผจญภัย","อัศวินการบ้าน","จอมเวทย์ความรู้","ปรมาจารย์","ตำนานห้องเรียน"];
 const QUOTES = [
   "วันนี้จะเป็นวันที่ดี สู้ๆ นะ!", "อย่าลืมเคลียร์เควสก่อนไปนอนล่ะ 🎮",
-  "เลเวลอัพอยู่ไม่ไกล ลุยเลย!", "พักได้ แต่อย่ายอมแพ้!", "ระบบบันทึกความสำเร็จของคุณไว้แล้ว ✨"
+  "เลเวลอัพอยู่ไม่ไกล ลุยเลย!", "พักได้ แต่อย่ายอมแพ้!", "ระบบซิงค์ข้อมูลออนไลน์เรียบร้อย ✨"
 ];
 const EV = { "สอบ":{icon:"📝",color:"#ef4444"}, "กิจกรรม":{icon:"🎪",color:"#a855f7"}, "วันหยุด":{icon:"🏖️",color:"#22c55e"}, "อื่นๆ":{icon:"📌",color:"#64748b"} };
 const levelOf = xp => Math.floor(xp / 100) + 1;
@@ -103,9 +125,7 @@ function syncToGoogleCalendar(title, due, details = ""){
   window.open(url, "_blank");
 }
 
-// ===================== 3) จัดการผู้ใช้ =====================
-const getUsers = () => JSON.parse(localStorage.getItem("ms_users_v4") || "{}");
-const setUsers = u => localStorage.setItem("ms_users_v4", JSON.stringify(u));
+// ===================== 3) จัดการผู้ใช้ผ่าน Supabase =====================
 const newData = () => ({ hw:[], events:[], xp:0, coins:0, streak:0, lastDay:"", done:0, badges:[], avatar:"🐱", room:"ม.6/12" });
 
 let user = null, NAME = "", ROOM = "ม.6/12", AVATAR = "🐱", D = null;
@@ -113,7 +133,14 @@ let page = "home", qFilter = "todo", editingId = null;
 let calY, calM, selDate = iso(new Date());
 let selectedTimetableDay = Math.min(Math.max(new Date().getDay(), 1), 5);
 
-function persist(){ const u = getUsers(); if (u[user]) { u[user].data = D; setUsers(u); } }
+async function persist(){
+  if (!user) return;
+  try {
+    await sb(`users?username=eq.${user}`, "PATCH", { data: D });
+  } catch (err) {
+    console.error("ซิงค์ข้อมูลไม่สำเร็จ:", err);
+  }
+}
 function commit(){ persist(); renderAll(); }
 const pending = () => D.hw.filter(h => !h.done).sort((a, b) => a.due.localeCompare(b.due));
 
@@ -143,33 +170,54 @@ $("#authForm").onsubmit = async e => {
   e.preventDefault();
   const f = e.target.elements, box = $(".auth-box");
   const username = f["username"].value.trim().toLowerCase(), pw = f["password"].value;
-  const users = getUsers();
   const fail = msg => { $("#authMsg").textContent = msg; box.classList.remove("shake"); void box.offsetWidth; box.classList.add("shake"); };
   
-  if (authMode === "register"){
-    const name = f["name"].value.trim(), room = f["room"].value.trim() || "ม.6/12";
-    if (!name) return fail("กรุณาใส่ชื่อที่ให้เรียก");
-    if (users[username]) return fail("ชื่อผู้ใช้นี้มีคนใช้แล้ว");
-    const salt = uid(), dat = newData();
-    dat.avatar = selectedAvatar; dat.room = room;
-    users[username] = { name, room, salt, hash: await hash(pw, salt), data: dat };
-    setUsers(users);
-  } else {
-    const u = users[username];
-    if (!u || u.hash !== await hash(pw, u.salt)) return fail("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+  try {
+    if (authMode === "register"){
+      const name = f["name"].value.trim(), room = f["room"].value.trim() || "ม.6/12";
+      if (!name) return fail("กรุณาใส่ชื่อที่ให้เรียก");
+      
+      const check = await sb(`users?username=eq.${username}&select=username`);
+      if (check && check.length > 0) return fail("ชื่อผู้ใช้นี้มีคนใช้แล้ว");
+
+      const salt = uid(), dat = newData();
+      dat.avatar = selectedAvatar; dat.room = room;
+      const hashed = await hash(pw, salt);
+
+      await sb("users", "POST", { username, name, room, salt, hash: hashed, data: dat });
+    } else {
+      const res = await sb(`users?username=eq.${username}&select=*`);
+      if (!res || res.length === 0) return fail("ไม่พบชื่อผู้ใช้นี้");
+      const u = res[0];
+      const hashed = await hash(pw, u.salt);
+      if (hashed !== u.hash) return fail("รหัสผ่านไม่ถูกต้อง");
+    }
+    localStorage.setItem("ms_session", username);
+    e.target.reset(); sfx("level");
+    startApp(username);
+  } catch (err) {
+    fail("เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาเช็กเน็ตหรือการตั้งค่า Supabase");
+    console.error(err);
   }
-  localStorage.setItem("ms_session", username);
-  e.target.reset(); sfx("level");
-  startApp(username);
 };
 
-function startApp(username){
-  const u = getUsers()[username];
-  if (!u) return showAuth();
-  user = username; NAME = u.name; ROOM = u.room || u.data.room || "ม.6/12"; AVATAR = u.data.avatar || "🐱"; D = Object.assign(newData(), u.data);
-  $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
-  dailyCheck(); renderAll(); showPage("home");
+async function startApp(username){
+  try {
+    const res = await sb(`users?username=eq.${username}&select=*`);
+    if (!res || res.length === 0) return showAuth();
+    const u = res[0];
+    user = u.username; NAME = u.name; ROOM = u.room || "ม.6/12";
+    D = Object.assign(newData(), u.data);
+    AVATAR = D.avatar || "🐱";
+    
+    $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden");
+    dailyCheck(); renderAll(); showPage("home");
+  } catch (err) {
+    console.error(err);
+    showAuth();
+  }
 }
+
 function showAuth(){ $("#app").classList.add("hidden"); $("#auth").classList.remove("hidden"); }
 function logout(){ localStorage.removeItem("ms_session"); user = null; D = null; showAuth(); }
 
@@ -543,7 +591,10 @@ document.documentElement.dataset.theme = localStorage.getItem("ms_theme")
 const n0 = new Date(); calY = n0.getFullYear(); calM = n0.getMonth();
 fillTeachers();
 const session = localStorage.getItem("ms_session");
-session ? startApp(session) : showAuth();
-setInterval(() => { if (user){ renderHome(); renderTimetable(); } }, 30000);
+if (session) {
+  startApp(session);
+} else {
+  showAuth();
+}
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
