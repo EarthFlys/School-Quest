@@ -6,7 +6,7 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const LEADERS = {
   "gun": "gunzaza",
   "earthflyszx_": "earthzaza",
-  "pang": "pangzaza"
+  "pangtest": "pangzaza"
 };
 
 async function sb(endpoint, method = "GET", body = null, headers = {}) {
